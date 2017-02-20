@@ -30,3 +30,6 @@ chat
 # Project files
 .project
 .cproject
+
+# Other
+.svn
