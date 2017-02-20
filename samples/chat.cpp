@@ -89,9 +89,9 @@ int main( int argc, char* argv[] )
         client.Connect( [&](boost::system::error_code ){
 
             client.OnEvent( "TextMessageReceived", [&](const Event& e){
-                auto from = e.get<string>("message.from");
-                auto to = e.get<string>("message.to");
-                auto msg = e.get<string>("message.body");
+                auto from = e.at("message").at("from");
+                auto to = e.at("message").at("to");
+                auto msg = e.at("message").at("body");
 
                 cout << "> Message from: " << from << " (for: " << to << "):\n";
                 cout << msg << "\n\n";

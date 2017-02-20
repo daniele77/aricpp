@@ -281,7 +281,7 @@ public:
     void HandleEvent(const Event& e)
     {
         // dipatch the event:
-        auto type = e.get< string >( "type" );
+        auto type = e.at("type");
         auto range = rules.equal_range( type );
         for_each( range.first, range.second, [&e,this](auto& item){
             auto& rule = item.second;
@@ -373,16 +373,18 @@ int main( int argc, char* argv[] )
             Rule( "StasisStart",
                 [](const Event& e)
                 {
-                    const auto& args = e.get_child("args");
+                    const auto& args = e.at("args");
                     return ( args.empty() );
                 },
                 [&calls,&client,&application,&rules,&nextId](const Event& e)
                 {
-                    auto id = e.get< string >( "channel.id" );
-                    auto name = e.get< string >( "channel.name" );
-                    auto ext = e.get< string >( "channel.dialplan.exten" );
-                    auto callerNum = e.get< string >( "channel.caller.number" );
-                    auto callerName = e.get< string >( "channel.caller.name" );
+                    const auto& ch = e.at("channel");
+                    const std::string id = ch.at("id");
+                    const std::string name = ch.at("name");
+                    const std::string ext = ch.at("dialplan").at("exten");
+                    const auto& caller = ch.at("caller");
+                    const std::string callerNum = caller.at("number");
+                    std::string callerName = caller.at("name");
                     if (callerName.empty()) callerName = callerNum;
 
                     // generate an id for the called
@@ -396,8 +398,8 @@ int main( int argc, char* argv[] )
                         Rule( "ChannelCreated",
                             [dialedId](const Event& ev)
                             {
-                                auto id = ev.get< string >( "channel.id" );
-                                return (id == dialedId);
+                                auto dId = ev.at("channel").at("id");
+                                return (dId == dialedId);
                             },
                             [&calls,dialedId,id](const Event&)
                             {
@@ -419,8 +421,8 @@ int main( int argc, char* argv[] )
                         Rule( "ChannelStateChange",
                             [dialedId](const Event& ev)
                             {
-                                auto state = ev.get<string>("channel.state");
-                                auto id = ev.get< string >( "channel.id" );
+                                auto state = ev.at("channel").at("state");
+                                auto id = ev.at("channel").at("id");
                                 return (state == "Ringing" && id == dialedId);
                             },
                             [&client,id](const Event&)
@@ -445,12 +447,12 @@ int main( int argc, char* argv[] )
                         Rule( "ChannelDestroyed",
                             [dialedId](const Event& ev)
                             {
-                                auto evId = ev.get<string>( "channel.id" );
+                                auto evId = ev.at("channel").at("id");
                                 return (evId == dialedId);
                             },
                             [&rules,r2](const Event& ev)
                             {
-                                auto cause = ev.get<int>("cause");
+                                int cause = ev.at("cause");
                                 if (cause == 17) // user busy
                                     rules.Remove( r2 );
                             },
@@ -488,21 +490,22 @@ int main( int argc, char* argv[] )
             Rule( "StasisStart",
                 [](const Event& e)
                 {
-                    const auto& args = e.get_child("args");
-                    return ( !args.empty() && args.begin()->second.get_value<string>() == "dialed" );
+                    const auto& args = e.at("args");
+                    return ( !args.empty() && args[0] == "dialed" );
                 },
                 [&rules,&calls,&client](const Event& e)
                 {
-                    const auto& args = e.get_child("args");
-                    auto originatingCh = (++args.begin())->second.get_value<string>();
+                    const auto& args = e.at("args");
+                    const std::string originatingCh = args[1];
 
                     // schedule bridge
                     auto rule = rules.Add(
                         Rule( "ChannelStateChange",
                             [originatingCh](const Event& ev)
                             {
-                                auto state = ev.get<string>("channel.state");
-                                auto id = ev.get< string >( "channel.id" );
+                                const auto& channel = ev.at("channel");
+                                auto state = channel.at("state");
+                                auto id = channel.at("id");
                                 return (state == "Up" && id == originatingCh);
                             },
                             [originatingCh,&client,&calls](const Event&)
@@ -519,12 +522,8 @@ int main( int argc, char* argv[] )
                                         return;
                                     }
 
-                                    namespace pt = boost::property_tree;
-                                    pt::ptree tree;
-                                    stringstream ss;
-                                    ss << body;
-                                    pt::read_json( ss, tree );
-                                    auto bridge = tree.get< string >("id");
+                                    auto tree = nlohmann::json::parse( body );
+                                    const std::string bridge = tree.at("id");
 
                                     auto call = calls.GetFromCh(originatingCh);
                                     if (call)
@@ -555,7 +554,7 @@ int main( int argc, char* argv[] )
                          [](auto){ return true; },
                          [&calls](const Event& e)
                          {
-                             auto id = e.get< string >( "channel.id" );
+                             auto id = e.at("channel").at("id");
                              // look for the call with the given channel
                              auto call = calls.GetFromCh(id);
                              if (call == nullptr)

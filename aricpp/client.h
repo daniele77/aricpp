@@ -41,17 +41,16 @@
 #include "websocket.h"
 #include "httpclient.h"
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include "json.hpp"
 #include <sstream>
 #include <algorithm>
 
 namespace aricpp
 {
 
-using Event = boost::property_tree::ptree;
+using Event = nlohmann::json;
 
-void Dump(const Event& e) { write_json(std::cout, e); }
+void Dump(const Event& e) { std::cout << std::setw(2) << e << std::endl; }
 
 
 class Client
@@ -123,14 +122,10 @@ private:
 
     void RawEvent( const std::string& msg )
     {
-        namespace pt = boost::property_tree;
         try
         {
-            pt::ptree tree;
-            std::stringstream ss;
-            ss << msg;
-            pt::read_json( ss, tree );
-            auto type = tree.get< std::string >( "type" );
+            auto tree = Event::parse( msg );
+            const std::string type = tree[ "type" ];
             auto range = eventHandlers.equal_range( type );
             std::for_each( range.first, range.second, [&tree,&type](auto f){
                 try
@@ -149,7 +144,7 @@ private:
                 }
             } );
         }
-        catch ( const pt::ptree_error& e )
+        catch ( const std::exception& e )
         {
             // TODO
             std::cerr << "Exception parsing " << msg << ": " << e.what() << std::endl;

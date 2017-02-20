@@ -30,7 +30,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-override CXXFLAGS += -O3 -Werror -Wall -Wextra -Wpedantic -std=c++1y -I..
+override CXXFLAGS += -O3 -Werror -Wall -Wextra -Wpedantic -std=c++1y -I.. -I../thirdparty/json/src
 override LDLIBS += -lboost_program_options -lboost_system -lpthread
 
 SAMPLES := dial chat query
