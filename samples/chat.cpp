@@ -88,10 +88,10 @@ int main( int argc, char* argv[] )
         Client client( ios, host, port, username, password, application );
         client.Connect( [&](boost::system::error_code ){
 
-            client.OnEvent( "TextMessageReceived", [&](const Event& e){
-                auto from = e.at("message").at("from");
-                auto to = e.at("message").at("to");
-                auto msg = e.at("message").at("body");
+            client.OnEvent( "TextMessageReceived", [&](const JsonTree& e){
+                auto from = Get<std::string>(e, {"message", "from"});
+                auto to = Get<std::string>(e, {"message", "to"});
+                auto msg = Get<std::string>(e, {"message", "body"});
 
                 cout << "> Message from: " << from << " (for: " << to << "):\n";
                 cout << msg << "\n\n";

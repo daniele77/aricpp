@@ -240,11 +240,11 @@ private:
 
 struct Rule
 {
-    using Predicate = function<bool(const Event&)>;
-    using Action = function<void(const Event&)>;
+    using Predicate = function<bool(const JsonTree&)>;
+    using Action = function<void(const JsonTree&)>;
     Rule(string&& type, Predicate p, Action a, bool trans=false) :
         eventType(move(type)), predicate(p), action(a), transient(trans), toRemove(false) {}
-    void Exec(const Event& e)
+    void Exec(const JsonTree& e)
     {
         if( toRemove ) return;
         if ( predicate(e) )
@@ -278,10 +278,10 @@ public:
     {
         rules.erase(r);
     }
-    void HandleEvent(const Event& e)
+    void HandleEvent(const JsonTree& e)
     {
         // dipatch the event:
-        auto type = e.at("type");
+        auto type = Get<std::string>(e, {"type"});
         auto range = rules.equal_range( type );
         for_each( range.first, range.second, [&e,this](auto& item){
             auto& rule = item.second;
@@ -371,20 +371,18 @@ int main( int argc, char* argv[] )
 
         rules.Add(
             Rule( "StasisStart",
-                [](const Event& e)
+                [](const JsonTree& e)
                 {
-                    const auto& args = e.at("args");
+                    const auto& args = Get<std::vector<std::string> >(e, {"args"});
                     return ( args.empty() );
                 },
-                [&calls,&client,&application,&rules,&nextId](const Event& e)
+                [&calls,&client,&application,&rules,&nextId](const JsonTree& e)
                 {
-                    const auto& ch = e.at("channel");
-                    const std::string id = ch.at("id");
-                    const std::string name = ch.at("name");
-                    const std::string ext = ch.at("dialplan").at("exten");
-                    const auto& caller = ch.at("caller");
-                    const std::string callerNum = caller.at("number");
-                    std::string callerName = caller.at("name");
+                    const std::string id = Get<std::string>(e, {"channel", "id"});
+                    const std::string name = Get<std::string>(e, {"channel", "name"});
+                    const std::string ext = Get<std::string>(e, {"channel", "dialplan", "exten"});
+                    const std::string callerNum = Get<std::string>(e, {"channel", "caller", "number"});
+                    std::string callerName = Get<std::string>(e, {"channel", "caller", "name"});
                     if (callerName.empty()) callerName = callerNum;
 
                     // generate an id for the called
@@ -396,12 +394,12 @@ int main( int argc, char* argv[] )
                     // schedule adding dialed channel to the call
                     auto r1 = rules.Add(
                         Rule( "ChannelCreated",
-                            [dialedId](const Event& ev)
+                            [dialedId](const JsonTree& ev)
                             {
-                                auto dId = ev.at("channel").at("id");
+                                auto dId = Get<std::string>(ev, {"channel", "id"});
                                 return (dId == dialedId);
                             },
-                            [&calls,dialedId,id](const Event&)
+                            [&calls,dialedId,id](const JsonTree&)
                             {
                                 auto call = calls.GetFromCh(id);
                                 if (call == nullptr)
@@ -419,13 +417,13 @@ int main( int argc, char* argv[] )
                     // schedule ringing
                     auto r2 = rules.Add(
                         Rule( "ChannelStateChange",
-                            [dialedId](const Event& ev)
+                            [dialedId](const JsonTree& ev)
                             {
-                                auto state = ev.at("channel").at("state");
-                                auto id = ev.at("channel").at("id");
+                                auto state = Get<std::string>(ev, {"channel", "state"});
+                                auto id = Get<std::string>(ev, {"channel", "id"});
                                 return (state == "Ringing" && id == dialedId);
                             },
-                            [&client,id](const Event&)
+                            [&client,id](const JsonTree&)
                             {
                                 client.RawCmd( "POST", "/ari/channels/"+id+"/ring", [](auto e,auto s,auto r,auto){
                                     if (e)
@@ -445,14 +443,14 @@ int main( int argc, char* argv[] )
 
                     auto r3 = rules.Add(
                         Rule( "ChannelDestroyed",
-                            [dialedId](const Event& ev)
+                            [dialedId](const JsonTree& ev)
                             {
-                                auto evId = ev.at("channel").at("id");
+                                auto evId = Get<std::string>(ev, {"channel", "id"});
                                 return (evId == dialedId);
                             },
-                            [&rules,r2](const Event& ev)
+                            [&rules,r2](const JsonTree& ev)
                             {
-                                int cause = ev.at("cause");
+                                int cause = Get<int>(ev, {"cause"});
                                 if (cause == 17) // user busy
                                     rules.Remove( r2 );
                             },
@@ -488,27 +486,26 @@ int main( int argc, char* argv[] )
 
         rules.Add(
             Rule( "StasisStart",
-                [](const Event& e)
+                [](const JsonTree& e)
                 {
-                    const auto& args = e.at("args");
+                    const auto& args = Get<std::vector<std::string>>(e, {"args"});
                     return ( !args.empty() && args[0] == "dialed" );
                 },
-                [&rules,&calls,&client](const Event& e)
+                [&rules,&calls,&client](const JsonTree& e)
                 {
-                    const auto& args = e.at("args");
+                    const auto& args = Get<std::vector<std::string>>(e, {"args"});
                     const std::string originatingCh = args[1];
 
                     // schedule bridge
                     auto rule = rules.Add(
                         Rule( "ChannelStateChange",
-                            [originatingCh](const Event& ev)
+                            [originatingCh](const JsonTree& ev)
                             {
-                                const auto& channel = ev.at("channel");
-                                auto state = channel.at("state");
-                                auto id = channel.at("id");
+                                auto state = Get<std::string>(ev, {"channel", "state"});
+                                auto id = Get<std::string>(ev, {"channel", "id"});
                                 return (state == "Up" && id == originatingCh);
                             },
-                            [originatingCh,&client,&calls](const Event&)
+                            [originatingCh,&client,&calls](const JsonTree&)
                             {
                                 client.RawCmd( "POST", "/ari/bridges?type=mixing", [&calls,&client,originatingCh](auto e,auto s,auto r,auto body){
                                     if (e)
@@ -522,8 +519,8 @@ int main( int argc, char* argv[] )
                                         return;
                                     }
 
-                                    auto tree = nlohmann::json::parse( body );
-                                    const std::string bridge = tree.at("id");
+                                    auto tree = FromJson( body );
+                                    const std::string bridge = Get<std::string>(tree, {"id"});
 
                                     auto call = calls.GetFromCh(originatingCh);
                                     if (call)
@@ -552,9 +549,9 @@ int main( int argc, char* argv[] )
 
         rules.Add( Rule( "ChannelDestroyed",
                          [](auto){ return true; },
-                         [&calls](const Event& e)
+                         [&calls](const JsonTree& e)
                          {
-                             auto id = e.at("channel").at("id");
+                             auto id = Get<std::string>(e, {"channel", "id"});
                              // look for the call with the given channel
                              auto call = calls.GetFromCh(id);
                              if (call == nullptr)
@@ -570,19 +567,19 @@ int main( int argc, char* argv[] )
         ) );
 
         client.Connect( [&](boost::system::error_code ){
-            client.OnEvent( "StasisStart", [&](const Event& e){
+            client.OnEvent( "StasisStart", [&](const JsonTree& e){
                 //Dump(e);
                 rules.HandleEvent(e);
             });
-            client.OnEvent("ChannelCreated", [&rules](const Event& e){
+            client.OnEvent("ChannelCreated", [&rules](const JsonTree& e){
                 //Dump(e);
                 rules.HandleEvent(e);
             });
-            client.OnEvent( "ChannelDestroyed", [&](const Event& e){
+            client.OnEvent( "ChannelDestroyed", [&](const JsonTree& e){
                 //Dump(e);
                 rules.HandleEvent(e);
             });
-            client.OnEvent("ChannelStateChange", [&rules](const Event& e){
+            client.OnEvent("ChannelStateChange", [&rules](const JsonTree& e){
                 //Dump(e);
                 rules.HandleEvent(e);
             });

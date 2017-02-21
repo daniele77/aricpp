@@ -34,31 +34,25 @@
 #ifndef ARICPP_CLIENT_H_
 #define ARICPP_CLIENT_H_
 
-#include <iostream> // for Dump(Event)
 #include <string>
 #include <unordered_map>
 #include <boost/asio.hpp>
-#include "websocket.h"
-#include "httpclient.h"
-
-#include "json.hpp"
 #include <sstream>
 #include <algorithm>
 
+#include "websocket.h"
+#include "httpclient.h"
+#include "jsontree.h"
+
 namespace aricpp
 {
-
-using Event = nlohmann::json;
-
-void Dump(const Event& e) { std::cout << std::setw(2) << e << std::endl; }
-
 
 class Client
 {
 public:
 
     using ConnectHandler = std::function< void(boost::system::error_code) >;
-    using EventHandler = std::function< void(const Event&) >;
+    using EventHandler = std::function< void(const JsonTree&) >;
 
     Client( boost::asio::io_service& ios, const std::string& host, const std::string& port,
             std::string _user, std::string _password, std::string _application ) :
@@ -124,8 +118,9 @@ private:
     {
         try
         {
-            auto tree = Event::parse( msg );
-            const std::string type = tree[ "type" ];
+            JsonTree tree = FromJson( msg );
+            //const std::string type = Get<std::string>(tree, "type");
+            const std::string type = Get<std::string>(tree, {"type"});
             auto range = eventHandlers.equal_range( type );
             std::for_each( range.first, range.second, [&tree,&type](auto f){
                 try
