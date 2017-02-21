@@ -34,26 +34,50 @@
 #ifndef ARICPP_JSONTREE_H_
 #define ARICPP_JSONTREE_H_
 
-#include "json.hpp"
+#include <iostream>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace aricpp
 {
 
 // Json encapsulation
 
-using JsonTree = nlohmann::json;
+using JsonTree = boost::property_tree::ptree;
 
-inline void Dump(const JsonTree& e) { std::cout << std::setw(2) << e << std::endl; }
+inline void Dump(const JsonTree& e) { boost::property_tree::write_json(std::cout, e); }
 
-inline JsonTree FromJson(const std::string& s) { return JsonTree::parse(s); }
+inline JsonTree FromJson(const std::string& s)
+{
+    boost::property_tree::ptree tree;
+    std::stringstream ss;
+    ss << s;
+    boost::property_tree::read_json( ss, tree );
+    return tree;
+}
 
 template <typename T> T Get(const JsonTree& e, const std::vector<std::string>& path)
 {
     assert( !path.empty() );
-    auto x = e.at(path[0]);
-    for (std::size_t i = 1; i < path.size(); ++i)
-        x = x.at(path[i]);
-    return x;
+    std::string s;
+    for (const auto &piece : path) s += piece + '.';
+    s.pop_back();
+    return e.get<T>(s);
+}
+
+template <> std::vector<std::string> Get(const JsonTree& e, const std::vector<std::string>& path)
+{
+    assert( !path.empty() );
+    std::string s;
+    for (const auto &piece : path) s += piece + '.';
+    s.pop_back();
+
+    std::vector<std::string> result;
+    const auto& args = e.get_child(s);
+    for (auto& child: args)
+        result.push_back(child.second.get_value<std::string>());
+
+    return result;
 }
 
 } // namespace aricpp
