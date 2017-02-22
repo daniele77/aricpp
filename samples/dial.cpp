@@ -97,213 +97,277 @@ using namespace std;
 class Call
 {
 public:
-    using Id = size_t;
+    Call( const Call& ) = default;
+    Call& operator=( const Call& ) = delete;
+    Call& operator=( Call&& ) = default;
 
-    Call(const Call&) = default;
-    Call& operator=(const Call&) = delete;
-    Call& operator=(Call&&) = default;
+    Call( Client& c, const string& dialingCh, const string& dialedCh ) :
+        client( c ), dialing( dialingCh ), dialed( dialedCh )
+    {}
 
-    Call(Client& c, const string& chId) : connection( &c )
+    void Dump() const
     {
-        channels.push_back(chId);
-#ifdef CALL_TRACE
-        cout << "Call " << id << " created with ch=" << chId << '\n';
-#endif
+        cout << "Call " << hex << this << dec
+             << " dialing=" << dialing << " dialed=" << dialed << endl;
     }
-#ifdef CALL_TRACE
-    ~Call()
+
+    void DialedChRinging()
     {
-        cout << "Call " << id << " destroyed\n";
-    }
-#endif
-    bool HasChannel(const string& ch) const
-    {
-        return find(channels.begin(), channels.end(), ch) != channels.end();
-    }
-    void AddCh(const string& ch)
-    {
-        channels.push_back(ch);
-#ifdef CALL_TRACE
-        cout << "Call " << id << " add ch=" << ch << '\n';
-#endif
-    }
-    // returns true if the calls has no more channels
-    bool RemoveCh(const string& ch)
-    {
-#ifdef CALL_TRACE
-        cout << "Call " << id << " remove ch=" << ch << '\n';
-#endif
-        channels.erase(remove(channels.begin(), channels.end(), ch), channels.end());
-        if (channels.empty() && ! bridge.empty())
-        {
-            connection->RawCmd( "DELETE", "/ari/bridges/"+bridge, [](auto,auto,auto,auto){});
-        }
-        else if (channels.size() == 1)
-        {
-            connection->RawCmd( "DELETE", "/ari/channels/"+channels[0], [](auto,auto,auto,auto){});
-        }
-        return channels.empty();
-    }
-    void Bridge(const string& bridgeId)
-    {
-#ifdef CALL_TRACE
-        cout << "Call " << id << " bridge\n";
-#endif
-        bridge = bridgeId;
-        assert(channels.size() == 2);
-        connection->RawCmd( "POST", "/ari/bridges/"+bridge+"/addChannel?channel="+channels[0]+","+channels[1], [](auto e,auto s,auto r,auto){
+        client.RawCmd( "POST", "/ari/channels/" + dialed + "/ring", [](auto e,auto s,auto r,auto){
             if (e)
             {
-                cerr << "Error in bridge request: " << e.message() << '\n';
+                cerr << "Error in ring request: " << e.message() << '\n';
                 return;
             }
             if ( s/100 != 2 )
             {
-                cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
+                cerr << "Negative response in ring request: " << s << ' ' << r << '\n';
                 return;
             }
+        });
+    }
 
-        });
-    }
-    void Dump() const
+    void DialedChStart()
     {
-        cout << "--- Call " << id << " dump:\n";
-        cout << "\tbridge=" << bridge << endl;
-        for_each(channels.begin(), channels.end(), [](auto& c){
-            cout << "\tch=" << c << endl;
-        });
+
+        client.RawCmd(
+            "POST",
+            "/ari/channels/" + dialing + "/answer",
+            [](auto,auto status,auto,auto)
+            {
+                if (status == 500) // Internal Server Error (the channel does not exist anymore)
+                {
+                    cerr << "Internal Server Error (the channel does not exist anymore)" << endl;
+                }
+            }
+        );
     }
-    Id GetId() const { return id; }
-    static const Id Invalid = 0;
+
+    void DialingChUp()
+    {
+        client.RawCmd(
+            "POST",
+            "/ari/bridges?type=mixing",
+            [this](auto e,auto s,auto r,auto body)
+            {
+                if (e)
+                {
+                    cerr << "Error in bridge request: " << e.message() << '\n';
+                    return;
+                }
+                if ( s/100 != 2 )
+                {
+                    cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
+                    return;
+                }
+
+                auto tree = FromJson( body );
+                const string bridge = Get< string >( tree, {"id"} );
+                Bridge( bridge );
+            }
+        );
+    }
+
+    bool ChHangup( const string& id )
+    {
+        string* hung = ( id == dialing ? &dialing : &dialed );
+        string* other = ( id == dialed ? &dialing : &dialed );
+
+        hung->clear();
+        if ( other->empty() && ! bridge.empty() )
+            client.RawCmd( "DELETE", "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
+        else if ( ! other->empty() )
+            client.RawCmd( "DELETE", "/ari/channels/" + *other, [](auto,auto,auto,auto){});
+        return ( hung->empty() && other->empty() );
+    }
 
 private:
-    static Id globalId;
-    Client* connection;
-    string bridge{};
-    vector<string> channels;
-    Id id = ++globalId;
-};
 
-Call::Id Call::globalId = 0;
+    void Bridge( const string& bridgeId )
+    {
+#ifdef CALL_TRACE
+        cout << "Call " << hex << this << dec << " bridge\n";
+#endif
+        bridge = bridgeId;
+        client.RawCmd(
+            "POST",
+            "/ari/bridges/" + bridge + "/addChannel?channel=" + dialing + "," + dialed,
+            [](auto e,auto s,auto r,auto)
+            {
+                if (e)
+                {
+                    cerr << "Error in bridge request: " << e.message() << '\n';
+                    return;
+                }
+                if ( s/100 != 2 )
+                {
+                    cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
+                    return;
+                }
+            }
+        );
+    }
+
+    Client& client;
+    string dialing;
+    string dialed;
+    string bridge;
+};
 
 class CallContainer
 {
 public:
-    CallContainer() = default;
+    explicit CallContainer( const string& app, Client& c ) :
+        application( app ), connection( c )
+    {
+        connection.OnEvent( "StasisStart", [this](const JsonTree& e){
+            Dump(e);
+
+            const auto& args = Get<vector<string> >(e, {"args"});
+            if (args.empty()) DialingChannel(e);
+            else DialedChannel(e);
+        });
+/*
+        connection.OnEvent("ChannelCreated", [this](const JsonTree& e){
+            Dump(e);
+
+            auto dialed = Get< string >( e, {"channel", "id"} );
+            auto call = dialedToCall.find( dialed );
+            if ( call == dialedToCall.end() )
+                cerr << "Call with dialed ch id " << dialed << " not found\n";
+        });
+*/
+        connection.OnEvent( "ChannelDestroyed", [this](const JsonTree& e){
+            Dump(e);
+
+            auto id = Get< string >( e, {"channel", "id"} );
+            Call* call = nullptr;
+            auto item = dialedToCall.find( id );
+            if ( item == dialedToCall.end() )
+            {
+                item = dialingToCall.find( id );
+                if ( item != dialedToCall.end() )
+                    call = item->second;
+            }
+            else
+                call = item->second;
+
+            if ( call )
+            {
+                if ( call->ChHangup( id ) )
+                    Remove( call );
+            }
+        });
+        connection.OnEvent("ChannelStateChange", [this](const JsonTree& e){
+            Dump(e);
+
+            auto id = Get< string >( e, {"channel", "id"} );
+            auto state = Get<std::string>( e, {"channel", "state"} );
+            if ( state == "Ringing" )
+            {
+                auto item = dialedToCall.find( id );
+                if ( item == dialedToCall.end() )
+                    cerr << "Call with dialed ch id " << id << " not found\n";
+                else
+                {
+                    auto call = item->second;
+                    call->DialedChRinging();
+                }
+            }
+            else if ( state == "Up" )
+            {
+                auto item = dialingToCall.find( id );
+                if ( item == dialingToCall.end() )
+                    cerr << "Call with dialing ch id " << id << " not found\n";
+                else
+                {
+                    auto call = item->second;
+                    call->DialingChUp();
+                }
+            }
+        });
+    }
     CallContainer(const CallContainer&) = delete;
     CallContainer(CallContainer&&) = delete;
     CallContainer& operator=(const CallContainer&) = delete;
-    void Set(Client& c) { connection = &c; }
-    Call* GetFromCh(const string& chId)
+
+private:
+    void DialingChannel( const JsonTree& e )
     {
-        auto it = find_if(calls.begin(), calls.end(), [&chId](const Call& call){ return call.HasChannel(chId); });
-        if (it == calls.end()) return nullptr;
-        return &(*it);
-    }
-    // Creates a new call having a given channel
-    void Create(const string& chId)
-    {
-#ifdef CALL_TRACE
-        cout << "create call from ch id: " << chId << '\n';
-#endif
-        calls.emplace_back(*connection, chId);
-    }
-    void Remove(const Call::Id c)
-    {
-#ifdef CALL_TRACE
-        cout << "removing call " << c << '\n';
-#endif
-        calls.erase(
-            remove_if(
-                calls.begin(),
-                calls.end(),
-                [c](const Call& curr){ return c == curr.GetId(); }
-            ),
-            calls.end()
+        const string callingId = Get<string>(e, {"channel", "id"});
+        const string name = Get<string>(e, {"channel", "name"});
+        const string ext = Get<string>(e, {"channel", "dialplan", "exten"});
+        const string callerNum = Get<string>(e, {"channel", "caller", "number"});
+        string callerName = Get<string>(e, {"channel", "caller", "name"});
+        if (callerName.empty()) callerName = callerNum;
+
+        // generate an id for the called
+        const string dialedId = "aricpp-" + to_string( nextId++ );
+
+        // create a new call object
+        Create( callingId, dialedId );
+
+        // call the called party
+        connection.RawCmd(
+            "POST",
+            "/ari/channels?"
+            "endpoint=sip/" + ext +
+            "&app=" + application +
+            "&channelId=" + dialedId +
+            "&callerId=" + callerName +
+            "&timeout=-1"
+            "&appArgs=dialed," + callingId,
+            [this,callingId](auto e,auto s,auto r,auto)
+            {
+                if (e) cerr << "Error creating channel: " << e.message() << '\n';
+                if (s/100 != 2)
+                {
+                    cerr << "Error: status code " << s << " reason: " << r << '\n';
+                    connection.RawCmd( "DELETE", "/ari/channels/"+callingId, [](auto,auto,auto,auto){});
+                }
+             }
         );
-#ifdef CALL_TRACE
-        cout << "calls# = " << calls.size() << "\n";
-#endif
-    }
-    void Dump() const
-    {
-        cout << "*** CallContainer Dump:\n";
-        for_each(calls.begin(), calls.end(), [](auto& c){ c.Dump(); });
-        cout << '\n';
-    }
-    size_t Size() const { return calls.size(); }
-private:
-    Client* connection;
-    vector<Call> calls;
-};
 
+    }
 
-struct Rule
-{
-    using Predicate = function<bool(const JsonTree&)>;
-    using Action = function<void(const JsonTree&)>;
-    Rule(string&& type, Predicate p, Action a, bool trans=false) :
-        eventType(move(type)), predicate(p), action(a), transient(trans), toRemove(false) {}
-    void Exec(const JsonTree& e)
+    void DialedChannel( const JsonTree& e )
     {
-        if( toRemove ) return;
-        if ( predicate(e) )
-        {
-            action(e);
-            toRemove = transient;
-        }
+        auto dialed = Get< string >( e, {"channel", "id"} );
+        auto item = dialedToCall.find( dialed );
+        if ( item == dialedToCall.end() )
+            cerr << "Call with dialed ch id " << dialed << " not found\n";
         else
-            toRemove = false;
-    }
-    bool ShouldRemove() const { return toRemove; }
-    const string eventType;
-private:
-    const Predicate predicate;
-    const Action action;
-    const bool transient;
-    bool toRemove;
-};
-
-class RuleSet
-{
-public:
-    explicit RuleSet(boost::asio::io_service& ios) : ioservice(ios) {}
-    auto Add(Rule&& r)
-    {
-        GC();
-        return rules.insert(make_pair(r.eventType, move(r)));
-    }
-    template < typename R >
-    void Remove(R r)
-    {
-        rules.erase(r);
-    }
-    void HandleEvent(const JsonTree& e)
-    {
-        // dipatch the event:
-        auto type = Get<std::string>(e, {"type"});
-        auto range = rules.equal_range( type );
-        for_each( range.first, range.second, [&e,this](auto& item){
-            auto& rule = item.second;
-            ioservice.post( [&rule,e](){ rule.Exec(e); } );
-        });
-    }
-
-private:
-    void GC()
-    {
-        // clean the set:
-        for( auto i = rules.begin(); i != rules.end(); )
         {
-            if( i->second.ShouldRemove() )
-                i = rules.erase(i);
-            else
-                ++i;
+            auto call = item->second;
+                call->DialedChStart();
         }
     }
-    boost::asio::io_service& ioservice;
-    multimap< string, Rule > rules;
+
+    // Creates a new call having given channels
+    void Create( const string& dialingId, const string& dialedId )
+    {
+#ifdef CALL_TRACE
+        cout << "create call from ch id: " << dialingId << '\n';
+#endif
+        calls.emplace_back( connection, dialingId, dialedId );
+        Call* call = &calls.back();
+        dialingToCall.insert( make_pair( dialingId, call ) );
+        dialedToCall.insert( make_pair( dialedId, call ) );
+    }
+
+    void Remove( Call* /*call*/ )
+    {
+        // TODO
+    }
+
+    const string application;
+    Client& connection;
+    vector<Call> calls;
+    unsigned long long nextId = 0;
+    unordered_map< string, Call* > dialingToCall;
+    unordered_map< string, Call* > dialedToCall;
 };
+
 
 int main( int argc, char* argv[] )
 {
@@ -344,8 +408,6 @@ int main( int argc, char* argv[] )
             return 0;
         }
 
-        unsigned long long nextId = 0;
-
         boost::asio::io_service ios;
 
         // Register to handle the signals that indicate when the server should exit.
@@ -364,226 +426,19 @@ int main( int argc, char* argv[] )
                 ios.stop();
             });
 
-        CallContainer calls;
         Client client( ios, host, port, username, password, application );
-        calls.Set(client);
-        RuleSet rules( ios );
+        CallContainer calls( application, client );
 
-        rules.Add(
-            Rule( "StasisStart",
-                [](const JsonTree& e)
-                {
-                    const auto& args = Get<std::vector<std::string> >(e, {"args"});
-                    return ( args.empty() );
-                },
-                [&calls,&client,&application,&rules,&nextId](const JsonTree& e)
-                {
-                    const std::string id = Get<std::string>(e, {"channel", "id"});
-                    const std::string name = Get<std::string>(e, {"channel", "name"});
-                    const std::string ext = Get<std::string>(e, {"channel", "dialplan", "exten"});
-                    const std::string callerNum = Get<std::string>(e, {"channel", "caller", "number"});
-                    std::string callerName = Get<std::string>(e, {"channel", "caller", "name"});
-                    if (callerName.empty()) callerName = callerNum;
-
-                    // generate an id for the called
-                    const string dialedId = "aricpp-" + to_string( nextId++ );
-
-                    // create a new call object
-                    calls.Create(id);
-
-                    // schedule adding dialed channel to the call
-                    auto r1 = rules.Add(
-                        Rule( "ChannelCreated",
-                            [dialedId](const JsonTree& ev)
-                            {
-                                auto dId = Get<std::string>(ev, {"channel", "id"});
-                                return (dId == dialedId);
-                            },
-                            [&calls,dialedId,id](const JsonTree&)
-                            {
-                                auto call = calls.GetFromCh(id);
-                                if (call == nullptr)
-                                {
-                                    cerr << "(AddCh) Warning: no call found with ch="+id+"\n";
-                                    calls.Dump();
-                                    assert(false);
-                                    return;
-                                }
-                                call->AddCh(dialedId);
-                            },
-                            true )  // transient rule
-                    );
-
-                    // schedule ringing
-                    auto r2 = rules.Add(
-                        Rule( "ChannelStateChange",
-                            [dialedId](const JsonTree& ev)
-                            {
-                                auto state = Get<std::string>(ev, {"channel", "state"});
-                                auto id = Get<std::string>(ev, {"channel", "id"});
-                                return (state == "Ringing" && id == dialedId);
-                            },
-                            [&client,id](const JsonTree&)
-                            {
-                                client.RawCmd( "POST", "/ari/channels/"+id+"/ring", [](auto e,auto s,auto r,auto){
-                                    if (e)
-                                    {
-                                        cerr << "Error in ring request: " << e.message() << '\n';
-                                        return;
-                                    }
-                                    if ( s/100 != 2 )
-                                    {
-                                        cerr << "Negative response in ring request: " << s << ' ' << r << '\n';
-                                        return;
-                                    }
-                                });
-                            },
-                            true )  // transient rule
-                    );
-
-                    auto r3 = rules.Add(
-                        Rule( "ChannelDestroyed",
-                            [dialedId](const JsonTree& ev)
-                            {
-                                auto evId = Get<std::string>(ev, {"channel", "id"});
-                                return (evId == dialedId);
-                            },
-                            [&rules,r2](const JsonTree& ev)
-                            {
-                                int cause = Get<int>(ev, {"cause"});
-                                if (cause == 17) // user busy
-                                    rules.Remove( r2 );
-                            },
-                            true ) // transient rule
-                    );
-
-                    // call the called party
-                    client.RawCmd(
-                        "POST",
-                        "/ari/channels?"
-                        "endpoint=sip/"+ext+
-                        "&app="+application+
-                        "&channelId="+dialedId+
-                        "&callerId="+callerName+
-                        "&timeout=-1"
-                        "&appArgs=dialed,"+id,
-                        [&client,id,r1,r2,r3,&rules](auto e,auto s,auto r,auto)
-                        {
-                            if (e) cerr << "Error creating channel: " << e.message() << '\n';
-                            if (s/100 != 2)
-                            {
-                                cerr << "Error: status code " << s << " reason: " << r << '\n';
-                                rules.Remove( r1 );
-                                rules.Remove( r2 );
-                                rules.Remove( r3 );
-
-                                client.RawCmd( "DELETE", "/ari/channels/"+id, [](auto,auto,auto,auto){});
-                            }
-                         }
-                    );
-                }
-        ) );
-
-        rules.Add(
-            Rule( "StasisStart",
-                [](const JsonTree& e)
-                {
-                    const auto& args = Get<std::vector<std::string>>(e, {"args"});
-                    return ( !args.empty() && args[0] == "dialed" );
-                },
-                [&rules,&calls,&client](const JsonTree& e)
-                {
-                    const auto& args = Get<std::vector<std::string>>(e, {"args"});
-                    const std::string originatingCh = args[1];
-
-                    // schedule bridge
-                    auto rule = rules.Add(
-                        Rule( "ChannelStateChange",
-                            [originatingCh](const JsonTree& ev)
-                            {
-                                auto state = Get<std::string>(ev, {"channel", "state"});
-                                auto id = Get<std::string>(ev, {"channel", "id"});
-                                return (state == "Up" && id == originatingCh);
-                            },
-                            [originatingCh,&client,&calls](const JsonTree&)
-                            {
-                                client.RawCmd( "POST", "/ari/bridges?type=mixing", [&calls,&client,originatingCh](auto e,auto s,auto r,auto body){
-                                    if (e)
-                                    {
-                                        cerr << "Error in bridge request: " << e.message() << '\n';
-                                        return;
-                                    }
-                                    if ( s/100 != 2 )
-                                    {
-                                        cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
-                                        return;
-                                    }
-
-                                    auto tree = FromJson( body );
-                                    const std::string bridge = Get<std::string>(tree, {"id"});
-
-                                    auto call = calls.GetFromCh(originatingCh);
-                                    if (call)
-                                        // add the channels to the bridge
-                                        call->Bridge(bridge);
-                                    else // one of the channel hung up in the meantime
-                                    {
-                                        cerr << "(bridge) Warning: no call found with ch="+originatingCh+": destroying bridge\n";
-                                        client.RawCmd( "DELETE", "/ari/bridges/" + bridge, [](auto,auto,auto,auto){} );
-                                        return;
-                                    }
-                                });
-                            },
-                            true )  // transient rule
-                    );
-
-                    client.RawCmd( "POST", "/ari/channels/"+originatingCh+"/answer",[&calls,originatingCh,&rules,rule](auto,auto status,auto,auto){
-                        if (status == 500) // Internal Server Error (the channel does not exist anymore)
-                        {
-                            rules.Remove(rule);
-                        }
-                    });
-                }
-            )
-        );
-
-        rules.Add( Rule( "ChannelDestroyed",
-                         [](auto){ return true; },
-                         [&calls](const JsonTree& e)
-                         {
-                             auto id = Get<std::string>(e, {"channel", "id"});
-                             // look for the call with the given channel
-                             auto call = calls.GetFromCh(id);
-                             if (call == nullptr)
-                             {
-                                 cerr << "WARNING: no call found with ch id=" << id << '\n';
-                                 // calls.Dump();
-                                 // assert(false);
-                                 return;
-                             }
-                             if (call->RemoveCh(id)) // no more channels: should remove the call
-                                 calls.Remove(call->GetId());
-                         }
-        ) );
-
-        client.Connect( [&](boost::system::error_code ){
-            client.OnEvent( "StasisStart", [&](const JsonTree& e){
-                //Dump(e);
-                rules.HandleEvent(e);
-            });
-            client.OnEvent("ChannelCreated", [&rules](const JsonTree& e){
-                //Dump(e);
-                rules.HandleEvent(e);
-            });
-            client.OnEvent( "ChannelDestroyed", [&](const JsonTree& e){
-                //Dump(e);
-                rules.HandleEvent(e);
-            });
-            client.OnEvent("ChannelStateChange", [&rules](const JsonTree& e){
-                //Dump(e);
-                rules.HandleEvent(e);
-            });
+        client.Connect( [&](boost::system::error_code e){
+            if (e)
+            {
+                cerr << "Connection error: " << e.message() << endl;
+                ios.stop();
+            }
+            else
+                cout << "Connected" << endl;
         });
+
         ios.run();
     }
     catch ( exception& e )
