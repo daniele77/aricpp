@@ -94,6 +94,8 @@ POST /ari/bridges/<bridge>/addChannel?channel=<channel>&role=partecipant
 using namespace aricpp;
 using namespace std;
 
+enum class ChMode { dialing=1, dialed=2, both=3 };
+
 class Call
 {
 public:
@@ -111,9 +113,15 @@ public:
              << " dialing=" << dialing << " dialed=" << dialed << endl;
     }
 
+    bool HasChannel(const string& ch, ChMode mode) const
+    {
+        return ( ( ( dialing == ch ) && ( static_cast<int>(mode) & static_cast<int>(ChMode::dialing) ) ) ||
+                 ( ( dialed  == ch ) && ( static_cast<int>(mode) & static_cast<int>(ChMode::dialed)  ) ) );
+    }
+
     void DialedChRinging()
     {
-        client.RawCmd( "POST", "/ari/channels/" + dialed + "/ring", [](auto e,auto s,auto r,auto){
+        client.RawCmd( "POST", "/ari/channels/" + dialing + "/ring", [](auto e,auto s,auto r,auto){
             if (e)
             {
                 cerr << "Error in ring request: " << e.message() << '\n';
@@ -220,85 +228,71 @@ public:
     explicit CallContainer( const string& app, Client& c ) :
         application( app ), connection( c )
     {
-        connection.OnEvent( "StasisStart", [this](const JsonTree& e){
-            Dump(e);
-
-            const auto& args = Get<vector<string> >(e, {"args"});
-            if (args.empty()) DialingChannel(e);
-            else DialedChannel(e);
-        });
-/*
-        connection.OnEvent("ChannelCreated", [this](const JsonTree& e){
-            Dump(e);
-
-            auto dialed = Get< string >( e, {"channel", "id"} );
-            auto call = dialedToCall.find( dialed );
-            if ( call == dialedToCall.end() )
-                cerr << "Call with dialed ch id " << dialed << " not found\n";
-        });
-*/
-        connection.OnEvent( "ChannelDestroyed", [this](const JsonTree& e){
-            Dump(e);
-
-            auto id = Get< string >( e, {"channel", "id"} );
-            Call* call = nullptr;
-            auto item = dialedToCall.find( id );
-            if ( item == dialedToCall.end() )
+        connection.OnEvent(
+            "StasisStart",
+            [this](const JsonTree& e)
             {
-                item = dialingToCall.find( id );
-                if ( item != dialedToCall.end() )
-                    call = item->second;
+                // Dump(e);
+
+                const auto& args = Get< vector< string > >( e, {"args"} );
+                if ( args.empty() ) DialingChannel( e );
+                else DialedChannel( e );
             }
-            else
-                call = item->second;
-
-            if ( call )
+        );
+        connection.OnEvent(
+            "ChannelDestroyed",
+            [this](const JsonTree& e)
             {
-                if ( call->ChHangup( id ) )
-                    Remove( call );
-            }
-        });
-        connection.OnEvent("ChannelStateChange", [this](const JsonTree& e){
-            Dump(e);
+                // Dump(e);
 
-            auto id = Get< string >( e, {"channel", "id"} );
-            auto state = Get<std::string>( e, {"channel", "state"} );
-            if ( state == "Ringing" )
-            {
-                auto item = dialedToCall.find( id );
-                if ( item == dialedToCall.end() )
-                    cerr << "Call with dialed ch id " << id << " not found\n";
-                else
+                auto id = Get< string >( e, {"channel", "id"} );
+                auto call = FindCallByChannel(id, ChMode::both);
+                if ( call )
                 {
-                    auto call = item->second;
-                    call->DialedChRinging();
+                    if ( call->ChHangup( id ) )
+                        Remove( call );
+                }
+                else
+                    cerr << "Call with a channel " << id << " not found (hangup event)" << endl;
+            }
+        );
+        connection.OnEvent(
+            "ChannelStateChange",
+            [this](const JsonTree& e)
+            {
+                // Dump(e);
+
+                auto id = Get< string >( e, {"channel", "id"} );
+                auto state = Get< string >( e, {"channel", "state"} );
+                if ( state == "Ringing" )
+                {
+                    auto call = FindCallByChannel(id, ChMode::dialed);
+                    if ( ! call )
+                        cerr << "Call with dialed ch id " << id << " not found (ringing event)\n";
+                    else
+                        call->DialedChRinging();
+                }
+                else if ( state == "Up" )
+                {
+                    auto call = FindCallByChannel(id, ChMode::dialing);
+                    if ( call ) call->DialingChUp();
                 }
             }
-            else if ( state == "Up" )
-            {
-                auto item = dialingToCall.find( id );
-                if ( item == dialingToCall.end() )
-                    cerr << "Call with dialing ch id " << id << " not found\n";
-                else
-                {
-                    auto call = item->second;
-                    call->DialingChUp();
-                }
-            }
-        });
+        );
     }
     CallContainer(const CallContainer&) = delete;
     CallContainer(CallContainer&&) = delete;
     CallContainer& operator=(const CallContainer&) = delete;
 
 private:
+
     void DialingChannel( const JsonTree& e )
     {
-        const string callingId = Get<string>(e, {"channel", "id"});
-        const string name = Get<string>(e, {"channel", "name"});
-        const string ext = Get<string>(e, {"channel", "dialplan", "exten"});
-        const string callerNum = Get<string>(e, {"channel", "caller", "number"});
-        string callerName = Get<string>(e, {"channel", "caller", "name"});
+        const string callingId = Get< string >( e, {"channel", "id"} );
+        const string name = Get< string >( e, {"channel", "name"} );
+        const string ext = Get< string >( e, {"channel", "dialplan", "exten"} );
+        const string callerNum = Get< string >( e, {"channel", "caller", "number"} );
+        string callerName = Get< string >( e, {"channel", "caller", "name"} );
         if (callerName.empty()) callerName = callerNum;
 
         // generate an id for the called
@@ -327,45 +321,44 @@ private:
                 }
              }
         );
-
     }
 
     void DialedChannel( const JsonTree& e )
     {
         auto dialed = Get< string >( e, {"channel", "id"} );
-        auto item = dialedToCall.find( dialed );
-        if ( item == dialedToCall.end() )
-            cerr << "Call with dialed ch id " << dialed << " not found\n";
+        auto call = FindCallByChannel(dialed, ChMode::dialed);
+        if ( ! call )
+            cerr << "Call with dialed ch id " << dialed << " not found (stasis start event)\n";
         else
-        {
-            auto call = item->second;
-                call->DialedChStart();
-        }
+            call->DialedChStart();
     }
 
     // Creates a new call having given channels
-    void Create( const string& dialingId, const string& dialedId )
+    void Create(const string& dialingId, const string& dialedId)
     {
 #ifdef CALL_TRACE
         cout << "create call from ch id: " << dialingId << '\n';
 #endif
-        calls.emplace_back( connection, dialingId, dialedId );
-        Call* call = &calls.back();
-        dialingToCall.insert( make_pair( dialingId, call ) );
-        dialedToCall.insert( make_pair( dialedId, call ) );
+        auto call = make_shared<Call>(connection, dialingId, dialedId);
+        calls.emplace_back(move(call));
     }
 
-    void Remove( Call* /*call*/ )
+    void Remove(shared_ptr<Call> call)
     {
-        // TODO
+        calls.erase(remove(calls.begin(), calls.end(), call), calls.end());
+    }
+
+    shared_ptr<Call> FindCallByChannel(const string& ch, ChMode mode) const
+    {
+        auto c = find_if(calls.begin(), calls.end(),
+                [&](auto call){ return call->HasChannel(ch, mode); });
+        return ( c == calls.end() ? shared_ptr<Call>() : *c );
     }
 
     const string application;
     Client& connection;
-    vector<Call> calls;
+    vector< shared_ptr< Call > > calls;
     unsigned long long nextId = 0;
-    unordered_map< string, Call* > dialingToCall;
-    unordered_map< string, Call* > dialedToCall;
 };
 
 
