@@ -89,7 +89,7 @@ POST /ari/bridges/<bridge>/addChannel?channel=<channel>&role=partecipant
 
  */
 
-//#define CALL_TRACE
+#define CALL_TRACE
 
 using namespace aricpp;
 using namespace std;
@@ -99,18 +99,23 @@ enum class ChMode { dialing=1, dialed=2, both=3 };
 class Call
 {
 public:
-    Call( const Call& ) = default;
-    Call& operator=( const Call& ) = delete;
-    Call& operator=( Call&& ) = default;
-
     Call( Client& c, const string& dialingCh, const string& dialedCh ) :
-        client( c ), dialing( dialingCh ), dialed( dialedCh )
-    {}
-
+        client(&c), dialing(dialingCh), dialed(dialedCh)
+    {
+#ifdef CALL_TRACE
+        cout << "Call dialing " << dialing << " dialed " << dialed
+             << "created\n";
+#endif
+    }
+#ifdef CALL_TRACE
+    ~Call()
+    {
+        cout << "Call destroyed\n";
+    }
+#endif
     void Dump() const
     {
-        cout << "Call " << hex << this << dec
-             << " dialing=" << dialing << " dialed=" << dialed << endl;
+        cout << "Call dialing=" << dialing << " dialed=" << dialed << endl;
     }
 
     bool HasChannel(const string& ch, ChMode mode) const
@@ -121,7 +126,7 @@ public:
 
     void DialedChRinging()
     {
-        client.RawCmd( "POST", "/ari/channels/" + dialing + "/ring", [](auto e,auto s,auto r,auto){
+        client->RawCmd( "POST", "/ari/channels/" + dialing + "/ring", [](auto e,auto s,auto r,auto){
             if (e)
             {
                 cerr << "Error in ring request: " << e.message() << '\n';
@@ -138,7 +143,7 @@ public:
     void DialedChStart()
     {
 
-        client.RawCmd(
+        client->RawCmd(
             "POST",
             "/ari/channels/" + dialing + "/answer",
             [](auto,auto status,auto,auto)
@@ -153,7 +158,7 @@ public:
 
     void DialingChUp()
     {
-        client.RawCmd(
+        client->RawCmd(
             "POST",
             "/ari/bridges?type=mixing",
             [this](auto e,auto s,auto r,auto body)
@@ -183,9 +188,9 @@ public:
 
         hung->clear();
         if ( other->empty() && ! bridge.empty() )
-            client.RawCmd( "DELETE", "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
+            client->RawCmd( "DELETE", "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
         else if ( ! other->empty() )
-            client.RawCmd( "DELETE", "/ari/channels/" + *other, [](auto,auto,auto,auto){});
+            client->RawCmd( "DELETE", "/ari/channels/" + *other, [](auto,auto,auto,auto){});
         return ( hung->empty() && other->empty() );
     }
 
@@ -194,10 +199,10 @@ private:
     void Bridge( const string& bridgeId )
     {
 #ifdef CALL_TRACE
-        cout << "Call " << hex << this << dec << " bridge\n";
+        cout << "Call bridge\n";
 #endif
         bridge = bridgeId;
-        client.RawCmd(
+        client->RawCmd(
             "POST",
             "/ari/bridges/" + bridge + "/addChannel?channel=" + dialing + "," + dialed,
             [](auto e,auto s,auto r,auto)
@@ -216,7 +221,7 @@ private:
         );
     }
 
-    Client& client;
+    Client* client;
     string dialing;
     string dialed;
     string bridge;
@@ -247,10 +252,10 @@ public:
 
                 auto id = Get< string >( e, {"channel", "id"} );
                 auto call = FindCallByChannel(id, ChMode::both);
-                if ( call )
+                if (call != calls.size())
                 {
-                    if ( call->ChHangup( id ) )
-                        Remove( call );
+                    if ( calls[call].ChHangup( id ) )
+                        Remove(call);
                 }
                 else
                     cerr << "Call with a channel " << id << " not found (hangup event)" << endl;
@@ -267,15 +272,15 @@ public:
                 if ( state == "Ringing" )
                 {
                     auto call = FindCallByChannel(id, ChMode::dialed);
-                    if ( ! call )
+                    if (call == calls.size())
                         cerr << "Call with dialed ch id " << id << " not found (ringing event)\n";
                     else
-                        call->DialedChRinging();
+                        calls[call].DialedChRinging();
                 }
                 else if ( state == "Up" )
                 {
                     auto call = FindCallByChannel(id, ChMode::dialing);
-                    if ( call ) call->DialingChUp();
+                    if (call != calls.size()) calls[call].DialingChUp();
                 }
             }
         );
@@ -327,10 +332,10 @@ private:
     {
         auto dialed = Get< string >( e, {"channel", "id"} );
         auto call = FindCallByChannel(dialed, ChMode::dialed);
-        if ( ! call )
+        if (call == calls.size())
             cerr << "Call with dialed ch id " << dialed << " not found (stasis start event)\n";
         else
-            call->DialedChStart();
+            calls[call].DialedChStart();
     }
 
     // Creates a new call having given channels
@@ -339,25 +344,27 @@ private:
 #ifdef CALL_TRACE
         cout << "create call from ch id: " << dialingId << '\n';
 #endif
-        auto call = make_shared<Call>(connection, dialingId, dialedId);
-        calls.emplace_back(move(call));
+        calls.emplace_back(connection, dialingId, dialedId);
     }
 
-    void Remove(shared_ptr<Call> call)
+    void Remove(size_t callIndex)
     {
-        calls.erase(remove(calls.begin(), calls.end(), call), calls.end());
+        assert(callIndex < calls.size());
+        calls.erase(calls.begin()+callIndex);
     }
 
-    shared_ptr<Call> FindCallByChannel(const string& ch, ChMode mode) const
+    // return the index of the call in the vector.
+    // return calls.size() if not found
+    size_t FindCallByChannel(const string& ch, ChMode mode) const
     {
-        auto c = find_if(calls.begin(), calls.end(),
-                [&](auto call){ return call->HasChannel(ch, mode); });
-        return ( c == calls.end() ? shared_ptr<Call>() : *c );
+        for(size_t i=0; i<calls.size(); ++i)
+            if (calls[i].HasChannel(ch, mode)) return i;
+        return calls.size();
     }
 
     const string application;
     Client& connection;
-    vector< shared_ptr< Call > > calls;
+    vector<Call> calls;
     unsigned long long nextId = 0;
 };
 
