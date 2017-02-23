@@ -73,25 +73,24 @@ public:
 
     Channel(const std::string _id, Client& _client) : id(_id), client(&_client) {}
 
-    void Ring()
+    Proxy& Ring()
     {
-        client->RawCmd("POST", "/ari/channels/"+id+"/ring", [](auto,auto,auto,auto){} );
+        return Command("POST", "/ari/channels/"+id+"/ring");
     }
 
-    void Answer()
+    Proxy& Answer()
     {
-        client->RawCmd("POST", "/ari/channels/"+id+"/answer", [](auto,auto,auto,auto){} );
+        return Command("POST", "/ari/channels/"+id+"/answer");
     }
 
-    void Hangup()
+    Proxy& Hangup()
     {
-        client->RawCmd( "DELETE", "/ari/channels/"+id, [](auto,auto,auto,auto){} );
+        return Command("DELETE", "/ari/channels/"+id);
     }
 
     Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId, const std::string& args={})
     {
-        auto proxy = std::make_shared<Proxy>();
-        client->RawCmd(
+        return Command(
             "POST",
             "/ari/channels?"
             "endpoint=" + endpoint +
@@ -99,26 +98,8 @@ public:
             "&channelId=" + id +
             "&callerId=" + callerId +
             "&timeout=-1"
-            "&appArgs=" + args,
-            [proxy](auto e, int s, auto, auto)
-            {
-                if (e) proxy->SetError(e);
-                else proxy->Completed(s);
-            }
+            "&appArgs=" + args
         );
-        return *proxy;
-        /*
-         * TODO
-            [this,callingId](auto e,auto s,auto r,auto)
-            {
-                if (e) cerr << "Error creating channel: " << e.message() << '\n';
-                if (s/100 != 2)
-                {
-                    cerr << "Error: status code " << s << " reason: " << r << '\n';
-                    connection.RawCmd( "DELETE", "/ari/channels/"+callingId, [](auto,auto,auto,auto){});
-                }
-             }
-             */
     }
 
     const std::string& Id() const { return id; }
@@ -128,6 +109,22 @@ public:
     void HangupEvent() { idle = true; }
 
 private:
+
+    Proxy& Command(std::string&& method, std::string&& request)
+    {
+        auto proxy = std::make_shared<Proxy>();
+        client->RawCmd(
+            std::move(method),
+            std::move(request),
+            [proxy](auto e, int s, auto, auto)
+            {
+                if (e) proxy->SetError(e);
+                else proxy->Completed(s);
+            }
+        );
+        return *proxy;
+    }
+
     const std::string id;
     Client* client;
     bool idle = false;
