@@ -119,7 +119,6 @@ private:
         try
         {
             JsonTree tree = FromJson( msg );
-            //const std::string type = Get<std::string>(tree, "type");
             const std::string type = Get<std::string>(tree, {"type"});
             auto range = eventHandlers.equal_range( type );
             std::for_each( range.first, range.second, [&tree,&type](auto f){
