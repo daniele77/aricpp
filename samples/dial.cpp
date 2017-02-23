@@ -142,7 +142,6 @@ public:
 
     void DialedChStart()
     {
-
         client->RawCmd(
             "POST",
             "/ari/channels/" + dialing + "/answer",
