@@ -31,8 +31,8 @@
  ******************************************************************************/
 
 
-#ifndef ARICPP_CHANNEL_H_
-#define ARICPP_CHANNEL_H_
+#ifndef ARICPP_BRIDGE_H_
+#define ARICPP_BRIDGE_H_
 
 #include <string>
 #include "client.h"
@@ -41,59 +41,69 @@
 namespace aricpp
 {
 
-class Channel
+class Bridge
 {
 public:
 
-    Channel(Channel& rhs) = delete;
-    Channel& operator=(Channel& rhs) = delete;
-    Channel(Channel&& rhs) = default;
-    Channel& operator=(Channel&& rhs) = default;
-    ~Channel() = default;
+    Bridge(Bridge& rhs) = delete;
+    Bridge& operator=(Bridge& rhs) = delete;
+    Bridge(Bridge&& rhs) = default;
+    Bridge& operator=(Bridge&& rhs) = default;
 
-    Channel(const std::string _id, Client& _client) : id(_id), client(&_client) {}
+    ~Bridge() { Destroy(); }
 
-    Proxy& Ring()
+    /// Create a new bridge on asterisk
+    template<typename CreationHandler>
+    Bridge(Client& _client, CreationHandler h) : client(&_client)
     {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/ring", client);
+        client->RawCmd(
+            "POST",
+            "/ari/bridges?type=mixing",
+            [this,h](auto,auto,auto,auto body)
+            {
+                auto tree = FromJson(body);
+                id = Get<std::string>(tree, {"id"});
+                h();
+            }
+        );
     }
 
-    Proxy& Answer()
-    {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/answer", client);
-    }
-
-    Proxy& Hangup()
-    {
-        return Proxy::Command("DELETE", "/ari/channels/"+id, client);
-    }
-
-    Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId, const std::string& args={})
+    Proxy& Add(const Channel& ch)
     {
         return Proxy::Command(
             "POST",
-            "/ari/channels?"
-            "endpoint=" + endpoint +
-            "&app=" + application +
-            "&channelId=" + id +
-            "&callerId=" + callerId +
-            "&timeout=-1"
-            "&appArgs=" + args,
+            "/ari/bridges/" + id +
+            "/addChannel?channel=" + ch.Id(),
             client
         );
     }
 
-    const std::string& Id() const { return id; }
+    Proxy& Add(std::initializer_list<const Channel*> chs)
+    {
+        std::string req = "/ari/bridges/" + id + "/addChannel?channel=";
+        for (auto ch=chs.begin(); ch!=chs.end(); ++ch)
+            req += (*ch)->Id() + ',';
+        req.pop_back();
+        return Proxy::Command("POST", std::move(req), client);
+    }
 
-    bool Idle() const { return idle; }
+    Proxy& Destroy()
+    {
+        if ( IsDead() ) return Proxy::CreateEmpty();
+        return Proxy::Command(
+                    "DELETE",
+                    "/ari/bridges/" + id,
+                    client
+                )
+                .After( [this](int){ id.clear(); } );
+    }
 
-    void HangupEvent() { idle = true; }
+    bool IsDead() const { return id.empty(); }
 
 private:
 
-    const std::string id;
+    std::string id;
     Client* client;
-    bool idle = false;
 };
 
 } // namespace

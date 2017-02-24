@@ -42,6 +42,7 @@
 
 #include "../aricpp/client.h"
 #include "../aricpp/channel.h"
+#include "../aricpp/bridge.h"
 
 /*
 
@@ -105,7 +106,7 @@ public:
     {
 #ifdef CALL_TRACE
         cout << "Call dialing " << dialing.Id() << " dialed " << dialed.Id()
-             << "created\n";
+             << " created\n";
 #endif
     }
 #ifdef CALL_TRACE
@@ -131,27 +132,9 @@ public:
 
     void DialingChUp()
     {
-        client->RawCmd(
-            "POST",
-            "/ari/bridges?type=mixing",
-            [this](auto e,auto s,auto r,auto body)
-            {
-                if (e)
-                {
-                    cerr << "Error in bridge request: " << e.message() << '\n';
-                    return;
-                }
-                if ( s/100 != 2 )
-                {
-                    cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
-                    return;
-                }
-
-                auto tree = FromJson( body );
-                const string bridge = Get< string >( tree, {"id"} );
-                Bridge( bridge );
-            }
-        );
+        bridge = make_unique<Bridge>(
+            *client,
+            [this](){ bridge->Add( {&dialing, &dialed} ); });
     }
 
     bool ChHangup( const string& id )
@@ -160,8 +143,8 @@ public:
         Channel* other = ( id == dialed.Id() ? &dialing : &dialed );
 
         hung->HangupEvent();
-        if ( other->Idle() && ! bridge.empty() )
-            client->RawCmd( "DELETE", "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
+        if ( other->Idle() && bridge )
+            bridge.reset();
         else if ( ! other->Idle() )
             other->Hangup();
         return ( hung->Idle() && other->Idle() );
@@ -172,35 +155,10 @@ public:
 
 private:
 
-    void Bridge( const string& bridgeId )
-    {
-#ifdef CALL_TRACE
-        cout << "Call bridge\n";
-#endif
-        bridge = bridgeId;
-        client->RawCmd(
-            "POST",
-            "/ari/bridges/" + bridge + "/addChannel?channel=" + dialing.Id() + "," + dialed.Id(),
-            [](auto e,auto s,auto r,auto)
-            {
-                if (e)
-                {
-                    cerr << "Error in bridge request: " << e.message() << '\n';
-                    return;
-                }
-                if ( s/100 != 2 )
-                {
-                    cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
-                    return;
-                }
-            }
-        );
-    }
-
     Client* client;
     Channel dialing;
     Channel dialed;
-    string bridge;
+    unique_ptr<Bridge> bridge;
 };
 
 class CallContainer
@@ -303,28 +261,6 @@ private:
                         cout << "Call ok\n";
                 }
             );
-/*
-        // call the called party
-        connection.RawCmd(
-            "POST",
-            "/ari/channels?"
-            "endpoint=sip/" + ext +
-            "&app=" + application +
-            "&channelId=" + dialedId +
-            "&callerId=" + callerName +
-            "&timeout=-1"
-            "&appArgs=dialed," + callingId,
-            [this,callingId](auto e,auto s,auto r,auto)
-            {
-                if (e) cerr << "Error creating channel: " << e.message() << '\n';
-                if (s/100 != 2)
-                {
-                    cerr << "Error: status code " << s << " reason: " << r << '\n';
-                    connection.RawCmd( "DELETE", "/ari/channels/"+callingId, [](auto,auto,auto,auto){});
-                }
-             }
-        );
-*/
     }
 
     void DialedChannel( const JsonTree& e )

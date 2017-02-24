@@ -31,69 +31,80 @@
  ******************************************************************************/
 
 
-#ifndef ARICPP_CHANNEL_H_
-#define ARICPP_CHANNEL_H_
+#ifndef ARICPP_PROXY_H_
+#define ARICPP_PROXY_H_
 
 #include <string>
+#include <memory>
 #include "client.h"
-#include "proxy.h"
 
 namespace aricpp
 {
 
-class Channel
+class Proxy
 {
 public:
+    using ErrorHandler = std::function<void(boost::system::error_code)>;
+    using AfterHandler = std::function<void(int)>;
 
-    Channel(Channel& rhs) = delete;
-    Channel& operator=(Channel& rhs) = delete;
-    Channel(Channel&& rhs) = default;
-    Channel& operator=(Channel&& rhs) = default;
-    ~Channel() = default;
-
-    Channel(const std::string _id, Client& _client) : id(_id), client(&_client) {}
-
-    Proxy& Ring()
+    Proxy& After(AfterHandler f)
     {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/ring", client);
+        if ( afterHandler ) // sequence of std::function
+        {
+            auto g = afterHandler;
+            afterHandler = [g,f](int s){ g(s); f(s); };
+        }
+        else
+            afterHandler = f;
+        return *this;
     }
-
-    Proxy& Answer()
+    Proxy& Error(ErrorHandler f)
     {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/answer", client);
+        if ( errorHandler ) // sequence of std::function
+        {
+            auto g = errorHandler;
+            errorHandler = [g,f](boost::system::error_code e){ g(e); f(e); };
+        }
+        else
+            errorHandler = f;
+        return *this;
     }
-
-    Proxy& Hangup()
-    {
-        return Proxy::Command("DELETE", "/ari/channels/"+id, client);
-    }
-
-    Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId, const std::string& args={})
-    {
-        return Proxy::Command(
-            "POST",
-            "/ari/channels?"
-            "endpoint=" + endpoint +
-            "&app=" + application +
-            "&channelId=" + id +
-            "&callerId=" + callerId +
-            "&timeout=-1"
-            "&appArgs=" + args,
-            client
-        );
-    }
-
-    const std::string& Id() const { return id; }
-
-    bool Idle() const { return idle; }
-
-    void HangupEvent() { idle = true; }
 
 private:
+    friend class Channel;
+    friend class Bridge;
 
-    const std::string id;
-    Client* client;
-    bool idle = false;
+    void SetError(boost::system::error_code e)
+    {
+        if (errorHandler) errorHandler(e);
+    }
+    void Completed(int s)
+    {
+        if (afterHandler) afterHandler(s);
+    }
+
+    static Proxy& CreateEmpty()
+    {
+        return *std::make_shared<Proxy>();
+    }
+
+    static Proxy& Command(std::string&& method, std::string&& request, Client* client)
+    {
+        auto proxy = std::make_shared<Proxy>();
+        client->RawCmd(
+            std::move(method),
+            std::move(request),
+            [proxy](auto e, int s, auto, auto)
+            {
+                if (e) proxy->SetError(e);
+                else proxy->Completed(s);
+            }
+        );
+        return *proxy;
+    }
+
+    ErrorHandler errorHandler;
+    AfterHandler afterHandler;
 };
 
 } // namespace

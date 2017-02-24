@@ -203,7 +203,7 @@ private:
         bridge = bridgeId;
         client->RawCmd(
             "POST",
-            "/ari/bridges/" + bridge + "/addChannel?channel=" + dialing + "," + dialed,
+            "/ari/bridges/" + bridge + "/addChannel?channel=" + dialing + ',' + dialed,
             [](auto e,auto s,auto r,auto)
             {
                 if (e)
