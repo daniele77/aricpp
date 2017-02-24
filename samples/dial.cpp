@@ -250,7 +250,7 @@ public:
 
                 auto id = Get< string >( e, {"channel", "id"} );
                 auto call = FindCallByChannel(id, ChMode::both);
-                if (call)
+                if (call != calls.end())
                 {
                     if ( call->ChHangup( id ) )
                         Remove(call);
@@ -270,7 +270,7 @@ public:
                 if ( state == "Ringing" )
                 {
                     auto call = FindCallByChannel(id, ChMode::dialed);
-                    if (!call)
+                    if (call == calls.end())
                         cerr << "Call with dialed ch id " << id << " not found (ringing event)\n";
                     else
                         call->DialedChRinging();
@@ -278,7 +278,7 @@ public:
                 else if ( state == "Up" )
                 {
                     auto call = FindCallByChannel(id, ChMode::dialing);
-                    if (call) call->DialingChUp();
+                    if (call != calls.end()) call->DialingChUp();
                 }
             }
         );
@@ -288,6 +288,8 @@ public:
     CallContainer& operator=(const CallContainer&) = delete;
 
 private:
+
+    using CallIt = list<Call>::iterator;
 
     void DialingChannel( const JsonTree& e )
     {
@@ -330,7 +332,7 @@ private:
     {
         auto dialed = Get< string >( e, {"channel", "id"} );
         auto call = FindCallByChannel(dialed, ChMode::dialed);
-        if (!call)
+        if (call == calls.end())
             cerr << "Call with dialed ch id " << dialed << " not found (stasis start event)\n";
         else
             call->DialedChStart();
@@ -345,18 +347,18 @@ private:
         calls.emplace_back(connection, dialingId, dialedId);
     }
 
-    void Remove(Call* call)
+    void Remove(CallIt call)
     {
-        calls.remove_if( [call](const Call& obj){ return call==&obj; } );
+        calls.erase(call);
     }
 
-    // return the pointer of the call in the collection.
-    // return nullptr if not found
-    Call* FindCallByChannel(const string& ch, ChMode mode)
+    // return the iterator to the call in the collection.
+    // return calls.end() if not found
+    CallIt FindCallByChannel(const string& ch, ChMode mode)
     {
         for (auto call = calls.begin(); call != calls.end(); ++call)
-            if (call->HasChannel(ch, mode)) return &*call;
-        return nullptr;
+            if (call->HasChannel(ch, mode)) return call;
+        return calls.end();
     }
 
     const string application;
