@@ -37,8 +37,7 @@
 #include <iostream>
 #include <iterator>
 #include <string>
-#include <vector>
-#include <map>
+#include <list>
 
 #include "../aricpp/client.h"
 
@@ -229,7 +228,7 @@ private:
 class CallContainer
 {
 public:
-    explicit CallContainer( const string& app, Client& c ) :
+    CallContainer( const string& app, Client& c ) :
         application( app ), connection( c )
     {
         connection.OnEvent(
@@ -251,9 +250,9 @@ public:
 
                 auto id = Get< string >( e, {"channel", "id"} );
                 auto call = FindCallByChannel(id, ChMode::both);
-                if (call != calls.size())
+                if (call)
                 {
-                    if ( calls[call].ChHangup( id ) )
+                    if ( call->ChHangup( id ) )
                         Remove(call);
                 }
                 else
@@ -271,15 +270,15 @@ public:
                 if ( state == "Ringing" )
                 {
                     auto call = FindCallByChannel(id, ChMode::dialed);
-                    if (call == calls.size())
+                    if (!call)
                         cerr << "Call with dialed ch id " << id << " not found (ringing event)\n";
                     else
-                        calls[call].DialedChRinging();
+                        call->DialedChRinging();
                 }
                 else if ( state == "Up" )
                 {
                     auto call = FindCallByChannel(id, ChMode::dialing);
-                    if (call != calls.size()) calls[call].DialingChUp();
+                    if (call) call->DialingChUp();
                 }
             }
         );
@@ -331,10 +330,10 @@ private:
     {
         auto dialed = Get< string >( e, {"channel", "id"} );
         auto call = FindCallByChannel(dialed, ChMode::dialed);
-        if (call == calls.size())
+        if (!call)
             cerr << "Call with dialed ch id " << dialed << " not found (stasis start event)\n";
         else
-            calls[call].DialedChStart();
+            call->DialedChStart();
     }
 
     // Creates a new call having given channels
@@ -346,24 +345,23 @@ private:
         calls.emplace_back(connection, dialingId, dialedId);
     }
 
-    void Remove(size_t callIndex)
+    void Remove(Call* call)
     {
-        assert(callIndex < calls.size());
-        calls.erase(calls.begin()+callIndex);
+        calls.remove_if( [call](const Call& obj){ return call==&obj; } );
     }
 
-    // return the index of the call in the vector.
-    // return calls.size() if not found
-    size_t FindCallByChannel(const string& ch, ChMode mode) const
+    // return the pointer of the call in the collection.
+    // return nullptr if not found
+    Call* FindCallByChannel(const string& ch, ChMode mode)
     {
-        for(size_t i=0; i<calls.size(); ++i)
-            if (calls[i].HasChannel(ch, mode)) return i;
-        return calls.size();
+        for (auto call = calls.begin(); call != calls.end(); ++call)
+            if (call->HasChannel(ch, mode)) return &*call;
+        return nullptr;
     }
 
     const string application;
     Client& connection;
-    vector<Call> calls;
+    list<Call> calls;
     unsigned long long nextId = 0;
 };
 
