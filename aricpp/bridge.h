@@ -45,12 +45,26 @@ class Bridge
 {
 public:
 
-    Bridge(Bridge& rhs) = delete;
-    Bridge& operator=(Bridge& rhs) = delete;
-    Bridge(Bridge&& rhs) = default;
-    Bridge& operator=(Bridge&& rhs) = default;
+    Bridge(const Bridge& rhs) = delete;
+    Bridge& operator=(const Bridge& rhs) = delete;
+    Bridge(Bridge&& rhs) : id(rhs.id), client(rhs.client) { rhs.id.clear(); }
+    Bridge& operator=(Bridge&& rhs)
+    {
+        if ( &rhs != this )
+        {
+            id = rhs.id;
+            client = rhs.client;
+            rhs.id.clear();
+        }
+        return *this;
+    }
 
+    // TODO: shouldn't destroy the physical resource,
+    // because we're calling the dtor when the BridgeDestroyed event is received
     ~Bridge() { Destroy(); }
+
+    /// Create an object handling a asterisk bridge already existing
+    Bridge(const std::string& _id, Client& _client) : id(_id), client(&_client) {}
 
     /// Create a new bridge on asterisk
     template<typename CreationHandler>
@@ -83,8 +97,18 @@ public:
         std::string req = "/ari/bridges/" + id + "/addChannel?channel=";
         for (auto ch=chs.begin(); ch!=chs.end(); ++ch)
             req += (*ch)->Id() + ',';
-        req.pop_back();
+        req.pop_back(); // removes trailing ','
         return Proxy::Command("POST", std::move(req), client);
+    }
+
+    Proxy& Remove(const Channel& ch)
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/bridges/" + id +
+            "/removeChannel?channel=" + ch.Id(),
+            client
+        );
     }
 
     Proxy& Destroy()

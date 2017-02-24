@@ -45,8 +45,8 @@ class Channel
 {
 public:
 
-    Channel(Channel& rhs) = delete;
-    Channel& operator=(Channel& rhs) = delete;
+    Channel(const Channel& rhs) = delete;
+    Channel& operator=(const Channel& rhs) = delete;
     Channel(Channel&& rhs) = default;
     Channel& operator=(Channel&& rhs) = default;
     ~Channel() = default;
@@ -90,6 +90,10 @@ public:
     void HangupEvent() { idle = true; }
 
 private:
+
+    friend class AriModel;
+    void StasisStart() {}
+    void StateChanged() {}
 
     const std::string id;
     Client* client;

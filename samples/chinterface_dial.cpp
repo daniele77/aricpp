@@ -44,6 +44,95 @@
 #include "../aricpp/channel.h"
 #include "../aricpp/bridge.h"
 
+/****************************************/
+
+namespace aricpp
+{
+
+
+class AriModel
+{
+public:
+    AriModel(Client& c) : client(c)
+    {
+        Subscribe();
+    }
+
+    AriModel(const AriModel&) = delete;
+    AriModel(const AriModel&&) = delete;
+    AriModel& operator=(const AriModel&) = delete;
+    AriModel& operator=(const AriModel&&) = delete;
+
+private:
+
+    void Subscribe()
+    {
+        client.OnEvent(
+            "ChannelCreated",
+            [this](const JsonTree& e)
+            {
+                auto id = Get<std::string>( e, {"channel", "id"} );
+                channels.emplace( id, std::move(Channel(id, client)) );
+            }
+        );
+
+        client.OnEvent(
+            "StasisStart",
+            [this](const JsonTree& e)
+            {
+                auto id = Get<std::string>( e, {"channel", "id"} );
+                auto ch = channels.find(id);
+                if ( ch == channels.end() ) return;
+                ch->second.StasisStart();
+            }
+        );
+        client.OnEvent(
+            "ChannelDestroyed",
+            [this](const JsonTree& e)
+            {
+                auto id = Get<std::string>( e, {"channel", "id"} );
+                channels.erase( id );
+            }
+        );
+        client.OnEvent(
+            "ChannelStateChange",
+            [this](const JsonTree& e)
+            {
+                auto id = Get<std::string>( e, {"channel", "id"} );
+                auto ch = channels.find(id);
+                if ( ch == channels.end() ) return;
+                ch->second.StateChanged();
+            }
+        );
+        client.OnEvent(
+            "BridgeCreated",
+            [this](const JsonTree& e)
+            {
+                auto id = Get<std::string>( e, {"bridge", "id"} );
+                bridges.emplace( id, std::move(Bridge(id, client)) );
+            }
+        );
+        client.OnEvent(
+            "BridgeDestroyed",
+            [this](const JsonTree& e)
+            {
+                auto id = Get<std::string>( e, {"bridge", "id"} );
+                bridges.erase( id );
+            }
+        );
+
+    }
+
+    Client& client;
+    std::unordered_map<std::string, Channel> channels;
+    std::unordered_map<std::string, Bridge> bridges;
+};
+
+}
+
+/****************************************/
+
+
 /*
 
 116 ---INVITE--> 132
@@ -164,8 +253,7 @@ private:
 class CallContainer
 {
 public:
-    explicit CallContainer( const string& app, Client& c ) :
-        application( app ), connection( c )
+    CallContainer(const string& app, Client& c) : application(app), connection(c)
     {
         connection.OnEvent(
             "StasisStart",
@@ -362,6 +450,7 @@ int main( int argc, char* argv[] )
             });
 
         Client client( ios, host, port, username, password, application );
+        AriModel ariModel( client );
         CallContainer calls( application, client );
 
         client.Connect( [&](boost::system::error_code e){
