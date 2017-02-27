@@ -63,6 +63,9 @@ public:
     AriModel& operator=(const AriModel&) = delete;
     AriModel& operator=(const AriModel&&) = delete;
 
+    using ChStateHandler = std::function<void(Channel&)>;
+    void OnChannelStateChanged(ChStateHandler handler) { chStateChanged = handler; }
+
 private:
 
     void Subscribe()
@@ -99,9 +102,11 @@ private:
             [this](const JsonTree& e)
             {
                 auto id = Get<std::string>( e, {"channel", "id"} );
+                auto state = Get<std::string>( e, {"channel", "state"} );
                 auto ch = channels.find(id);
                 if ( ch == channels.end() ) return;
-                ch->second.StateChanged();
+                ch->second.StateChanged(state);
+                chStateChanged(ch->second);
             }
         );
         client.OnEvent(
@@ -120,12 +125,13 @@ private:
                 bridges.erase( id );
             }
         );
-
     }
 
     Client& client;
     std::unordered_map<std::string, Channel> channels;
     std::unordered_map<std::string, Bridge> bridges;
+
+    ChStateHandler chStateChanged;
 };
 
 }
@@ -253,7 +259,7 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c) : application(app), connection(c)
+    CallContainer(const string& app, Client& c, AriModel& m) : application(app), connection(c), model(m)
     {
         connection.OnEvent(
             "StasisStart",
@@ -283,15 +289,13 @@ public:
                     cerr << "Call with a channel " << id << " not found (hangup event)" << endl;
             }
         );
-        connection.OnEvent(
-            "ChannelStateChange",
-            [this](const JsonTree& e)
-            {
-                // Dump(e);
 
-                auto id = Get< string >( e, {"channel", "id"} );
-                auto state = Get< string >( e, {"channel", "state"} );
-                if ( state == "Ringing" )
+        model.OnChannelStateChanged(
+            [this](Channel& ch)
+            {
+                auto state = ch.GetState();
+                auto id = ch.Id();
+                if (state == Channel::State::ringing)
                 {
                     auto call = FindCallByChannel(id, ChMode::dialed);
                     if (call)
@@ -299,7 +303,7 @@ public:
                     else
                         cerr << "Call with dialed ch id " << id << " not found (ringing event)\n";
                 }
-                else if ( state == "Up" )
+                else if (state == Channel::State::up)
                 {
                     auto call = FindCallByChannel(id, ChMode::dialing);
                     if (call)
@@ -389,6 +393,7 @@ private:
     Client& connection;
     vector<shared_ptr<Call>> calls;
     unsigned long long nextId = 0;
+    AriModel& model;
 };
 
 
@@ -451,7 +456,7 @@ int main( int argc, char* argv[] )
 
         Client client( ios, host, port, username, password, application );
         AriModel ariModel( client );
-        CallContainer calls( application, client );
+        CallContainer calls( application, client, ariModel );
 
         client.Connect( [&](boost::system::error_code e){
             if (e)

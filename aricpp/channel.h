@@ -45,6 +45,22 @@ class Channel
 {
 public:
 
+    enum class State
+    {
+        down,
+        reserved,
+        offhook,
+        dialing,
+        ring,
+        ringing,
+        up,
+        busy,
+        dialingoffhook,
+        prering,
+        mute,
+        unknown
+    };
+
     Channel(const Channel& rhs) = delete;
     Channel& operator=(const Channel& rhs) = delete;
     Channel(Channel&& rhs) = default;
@@ -89,15 +105,33 @@ public:
 
     void HangupEvent() { idle = true; }
 
+    State GetState() const { return state; }
+
 private:
 
     friend class AriModel;
     void StasisStart() {}
-    void StateChanged() {}
+    void StateChanged(const std::string& s)
+    {
+        if ( s == "Down" ) state = State::down;
+        else if ( s == "Rsrvd" ) state = State::reserved;
+        else if ( s == "OffHook" ) state = State::offhook;
+        else if ( s == "Dialing" ) state = State::dialing;
+        else if ( s == "Ring" ) state = State::ring;
+        else if ( s == "Ringing" ) state = State::ringing;
+        else if ( s == "Up" ) state = State::up;
+        else if ( s == "Busy" ) state = State::busy;
+        else if ( s == "Dialing Offhook" ) state = State::dialingoffhook;
+        else if ( s == "Pre-ring" ) state = State::prering;
+        else if ( s == "Mute" ) state = State::mute;
+        else if ( s == "Unknown" ) state = State::unknown;
+        else state = State::unknown;
+    }
 
     const std::string id;
     Client* client;
     bool idle = false;
+    State state = State::unknown;
 };
 
 } // namespace
