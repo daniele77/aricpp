@@ -67,7 +67,11 @@ public:
     Channel& operator=(Channel&& rhs) = default;
     ~Channel() = default;
 
-    Channel(const std::string _id, Client& _client) : id(_id), client(&_client) {}
+    Channel(Client& _client, const std::string _id, const std::string& _state = {}) :
+        id(_id), client(&_client)
+    {
+        StateChanged(_state);
+    }
 
     Proxy& Ring()
     {
@@ -101,16 +105,26 @@ public:
 
     const std::string& Id() const { return id; }
 
-    bool Idle() const { return idle; }
-
-    void HangupEvent() { idle = true; }
+    bool IsDead() const { return dead; }
 
     State GetState() const { return state; }
 
+    const std::string& Name() const { return name; }
+    const std::string& Extension() const { return extension; }
+    const std::string& CallerNum() const { return callerNum; }
+    const std::string& CallerName() const { return callerName; }
+
 private:
 
-    friend class AriModel;
-    void StasisStart() {}
+    friend class ChannelSet;
+    void StasisStart( const std::string& _name, const std::string& _ext,
+                      const std::string& _callerNum, const std::string& _callerName)
+    {
+        name = _name;
+        extension = _ext;
+        callerNum = _callerNum;
+        callerName = _callerName;
+    }
     void StateChanged(const std::string& s)
     {
         if ( s == "Down" ) state = State::down;
@@ -127,11 +141,16 @@ private:
         else if ( s == "Unknown" ) state = State::unknown;
         else state = State::unknown;
     }
+    void Dead() { dead = true; }
 
     const std::string id;
     Client* client;
-    bool idle = false;
+    bool dead = false;
     State state = State::unknown;
+    std::string name;
+    std::string extension;
+    std::string callerNum;
+    std::string callerName;
 };
 
 } // namespace
