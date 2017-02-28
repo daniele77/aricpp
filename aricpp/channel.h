@@ -88,7 +88,7 @@ public:
         return Proxy::Command("DELETE", "/ari/channels/"+id, client);
     }
 
-    Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId, const std::string& args={})
+    Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId)
     {
         return Proxy::Command(
             "POST",
@@ -98,7 +98,7 @@ public:
             "&channelId=" + id +
             "&callerId=" + callerId +
             "&timeout=-1"
-            "&appArgs=" + args,
+            "&appArgs=internal",
             client
         );
     }

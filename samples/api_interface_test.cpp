@@ -44,153 +44,6 @@
 #include "../aricpp/bridge.h"
 #include "../aricpp/channelset.h"
 
-
-#if 0
-/****************************************/
-
-namespace aricpp
-{
-
-
-class ChannelSet
-{
-public:
-
-    using ChannelPtr = std::shared_ptr<Channel>;
-
-    ChannelSet(Client& c) : client(c) { Subscribe(); }
-
-    ChannelSet(const ChannelSet&) = delete;
-    ChannelSet(const ChannelSet&&) = delete;
-    ChannelSet& operator=(const ChannelSet&) = delete;
-    ChannelSet& operator=(const ChannelSet&&) = delete;
-
-    using ChHandler = std::function<void(ChannelPtr)>;
-    using StasisStartedHandler = std::function<void(ChannelPtr, bool)>;
-
-    void OnChannelCreated(ChHandler handler) { chCreated = handler; }
-    void OnChannelDestroyed(ChHandler handler) { chDestroyed = handler; }
-    void OnChannelStateChanged(ChHandler handler) { chStateChanged = handler; }
-    void OnStasisStarted(StasisStartedHandler handler) { stasisStarted = handler; }
-
-    template<typename ErrorHandler, typename CompletionHandler>
-    ChannelPtr CreateChannelAndDial(const std::string& ext, const std::string& app, const std::string caller, ErrorHandler error, CompletionHandler after)
-    {
-        // generate an id for the called
-        const std::string id = "aricpp-" + std::to_string(nextId++);
-        auto it = channels.emplace(id, std::make_shared<Channel>(client, id));
-        auto ch = it.first->second;
-        ch->Call(ext, app, caller, "internal")
-            .Error([error](boost::system::error_code e) { error(e); } )
-            .After([after](int s) { after(s); } );
-        return ch;
-    }
-
-private:
-
-    void Subscribe()
-    {
-        client.OnEvent(
-            "ChannelCreated",
-            [this](const JsonTree& e)
-            {
-                auto state = Get<std::string>( e, {"channel", "state"} );
-                auto id = Get<std::string>( e, {"channel", "id"} );
-                auto findResult = channels.find(id);
-                std::shared_ptr<Channel> channel;
-                if ( findResult == channels.end() )
-                {
-                    auto it = channels.emplace(id, std::make_shared<Channel>(client, id, state));
-                    channel = it.first->second;
-                }
-                else
-                {
-                    channel = findResult->second;
-                    channel->StateChanged(state);
-                }
-                if (chCreated) chCreated(channel);
-            }
-        );
-
-        client.OnEvent(
-            "StasisStart",
-            [this](const JsonTree& e)
-            {
-                const std::string id = Get<std::string>( e, {"channel", "id"} );
-                const std::string name = Get<std::string>( e, {"channel", "name"} );
-                const std::string ext = Get<std::string>( e, {"channel", "dialplan", "exten"} );
-                const std::string callerNum = Get<std::string>( e, {"channel", "caller", "number"} );
-                const std::string callerName = Get<std::string>( e, {"channel", "caller", "name"} );
-                const auto& args = Get<std::vector<std::string>>( e, {"args"} );
-
-                auto ch = channels.find(id);
-                if ( ch == channels.end() ) return;
-
-                ch->second->StasisStart(name, ext, callerNum, callerName);
-                if (stasisStarted) stasisStarted(ch->second, args.empty());
-            }
-        );
-        client.OnEvent(
-            "ChannelDestroyed",
-            [this](const JsonTree& e)
-            {
-                auto id = Get<std::string>( e, {"channel", "id"} );
-
-                auto ch = channels.find(id);
-                if ( ch == channels.end() ) return;
-                ch->second->Dead();
-                if (chDestroyed) chDestroyed(ch->second);
-                channels.erase(id);
-            }
-        );
-        client.OnEvent(
-            "ChannelStateChange",
-            [this](const JsonTree& e)
-            {
-                auto id = Get<std::string>( e, {"channel", "id"} );
-                auto state = Get<std::string>( e, {"channel", "state"} );
-                auto ch = channels.find(id);
-                if ( ch == channels.end() ) return;
-                ch->second->StateChanged(state);
-                if (chStateChanged) chStateChanged(ch->second);
-            }
-        );
-/*
-        client.OnEvent(
-            "BridgeCreated",
-            [this](const JsonTree& e)
-            {
-                auto id = Get<std::string>( e, {"bridge", "id"} );
-                bridges.emplace( id, std::move(Bridge(id, client)) );
-            }
-        );
-        client.OnEvent(
-            "BridgeDestroyed",
-            [this](const JsonTree& e)
-            {
-                auto id = Get<std::string>( e, {"bridge", "id"} );
-                bridges.erase( id );
-            }
-        );
-*/
-    }
-
-    Client& client;
-    std::unordered_map<std::string, ChannelPtr> channels;
-//    std::unordered_map<std::string, Bridge> bridges;
-    unsigned long long nextId = 0;
-
-    ChHandler chCreated;
-    ChHandler chDestroyed;
-    ChHandler chStateChanged;
-    StasisStartedHandler stasisStarted;
-};
-
-}
-
-/****************************************/
-#endif
-
 using namespace aricpp;
 using namespace std;
 
@@ -239,16 +92,16 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c, ChannelSet& m) : application(app), connection(c), model(m)
+    CallContainer(const string& app, Client& c, ChannelSet& m) : application(app), connection(c), channels(m)
     {
-        model.OnStasisStarted(
+        channels.OnStasisStarted(
             [this](shared_ptr<Channel> ch, bool external)
             {
                 if (external) CallingChannel( ch );
                 else CalledChannel( ch );
             }
         );
-        model.OnChannelDestroyed(
+        channels.OnChannelDestroyed(
             [this](shared_ptr<Channel> ch)
             {
                 auto call = FindCallByChannel(ch, ChMode::both);
@@ -261,7 +114,7 @@ public:
                     cerr << "Call with a channel " << ch->Id() << " not found (hangup event)" << endl;
             }
         );
-        model.OnChannelStateChanged(
+        channels.OnChannelStateChanged(
             [this](shared_ptr<Channel> ch)
             {
                 auto state = ch->GetState();
@@ -297,25 +150,21 @@ private:
         string callerName = callingCh->CallerName();
         if (callerName.empty()) callerName = callerNum;
 
-        // TODO better using .Error().After() but then, how can I return the channel?
-        auto calledCh = model.CreateChannelAndDial("sip/"s+ext, application, callerName,
-            [](boost::system::error_code e)
-            {
-                cerr << "Error creating channel: " << e.message() << '\n';
-            },
-            [callingCh](int s)
-            {
-                if (s/100 != 2)
-                {
-                    cerr << "Error: status code " << s << '\n';
-                    callingCh->Hangup();
-                }
-                else
-                    cout << "Call ok\n";
-            }
-        );
-
+        auto calledCh = channels.CreateChannel();
         Create(callingCh, calledCh);
+        calledCh->Call("sip/"s+ext, application, callerName)
+            .Error([](boost::system::error_code e) { cerr << "Error creating channel: " << e.message() << '\n'; } )
+            .After([callingCh](int s)
+                {
+                    if (s/100 != 2)
+                    {
+                        cerr << "Error: status code " << s << '\n';
+                        callingCh->Hangup();
+                    }
+                    else
+                        cout << "Call ok\n";
+                }
+            );
     }
 
     void CalledChannel(const shared_ptr<Channel> calledCh)
@@ -348,7 +197,7 @@ private:
     const string application;
     Client& connection;
     vector<shared_ptr<Call>> calls;
-    ChannelSet& model;
+    ChannelSet& channels;
 };
 
 
@@ -410,8 +259,8 @@ int main( int argc, char* argv[] )
             });
 
         Client client( ios, host, port, username, password, application );
-        ChannelSet ariModel( client );
-        CallContainer calls( application, client, ariModel );
+        ChannelSet channels( client );
+        CallContainer calls( application, client, channels );
 
         client.Connect( [&](boost::system::error_code e){
             if (e)

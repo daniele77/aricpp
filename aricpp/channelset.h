@@ -65,17 +65,12 @@ public:
     void OnChannelStateChanged(ChHandler handler) { chStateChanged = handler; }
     void OnStasisStarted(StasisStartedHandler handler) { stasisStarted = handler; }
 
-    template<typename ErrorHandler, typename CompletionHandler>
-    ChannelPtr CreateChannelAndDial(const std::string& ext, const std::string& app, const std::string caller, ErrorHandler error, CompletionHandler after)
+    ChannelPtr CreateChannel()
     {
         // generate an id for the called
         const std::string id = "aricpp-" + std::to_string(nextId++);
         auto it = channels.emplace(id, std::make_shared<Channel>(client, id));
-        auto ch = it.first->second;
-        ch->Call(ext, app, caller, "internal")
-            .Error([error](boost::system::error_code e) { error(e); } )
-            .After([after](int s) { after(s); } );
-        return ch;
+        return it.first->second;
     }
 
 private:
