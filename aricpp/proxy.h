@@ -37,6 +37,7 @@
 #include <string>
 #include <memory>
 #include "client.h"
+#include "errors.h"
 
 namespace aricpp
 {
@@ -44,26 +45,26 @@ namespace aricpp
 class Proxy
 {
 public:
-    using ErrorHandler = std::function<void(boost::system::error_code)>;
-    using AfterHandler = std::function<void(int)>;
+    using ErrorHandler = std::function<void(Error,const std::string&)>;
+    using AfterHandler = std::function<void(void)>;
 
     Proxy& After(AfterHandler f)
     {
         if ( afterHandler ) // sequence of std::function
         {
             auto g = afterHandler;
-            afterHandler = [g,f](int s){ g(s); f(s); };
+            afterHandler = [g,f](){ g(); f(); };
         }
         else
             afterHandler = f;
         return *this;
     }
-    Proxy& Error(ErrorHandler f)
+    Proxy& OnError(ErrorHandler f)
     {
         if ( errorHandler ) // sequence of std::function
         {
             auto g = errorHandler;
-            errorHandler = [g,f](boost::system::error_code e){ g(e); f(e); };
+            errorHandler = [g,f](Error e, const std::string& msg){ g(e, msg); f(e, msg); };
         }
         else
             errorHandler = f;
@@ -74,13 +75,13 @@ private:
     friend class Channel;
     friend class Bridge;
 
-    void SetError(boost::system::error_code e)
+    void SetError(Error e, const std::string& msg)
     {
-        if (errorHandler) errorHandler(e);
+        if (errorHandler) errorHandler(e, msg);
     }
-    void Completed(int s)
+    void Completed()
     {
-        if (afterHandler) afterHandler(s);
+        if (afterHandler) afterHandler();
     }
 
     static Proxy& CreateEmpty()
@@ -94,10 +95,17 @@ private:
         client->RawCmd(
             std::move(method),
             std::move(request),
-            [proxy](auto e, int s, auto, auto)
+            [proxy](auto e, int state, auto reason, auto)
             {
-                if (e) proxy->SetError(e);
-                else proxy->Completed(s);
+                if (e)
+                    proxy->SetError(Error::network, e.message());
+                else
+                {
+                    if (state/100 == 2)
+                        proxy->Completed();
+                    else
+                        proxy->SetError(Error::unknown, reason);
+                }
             }
         );
         return *proxy;
@@ -107,6 +115,6 @@ private:
     AfterHandler afterHandler;
 };
 
-} // namespace
+} // namespace aricpp
 
 #endif

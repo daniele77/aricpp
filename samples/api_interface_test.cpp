@@ -153,18 +153,18 @@ private:
         auto calledCh = channels.CreateChannel();
         Create(callingCh, calledCh);
         calledCh->Call("sip/"s+ext, application, callerName)
-            .Error([](boost::system::error_code e) { cerr << "Error creating channel: " << e.message() << '\n'; } )
-            .After([callingCh](int s)
+            .OnError([callingCh](Error e, const string& msg)
                 {
-                    if (s/100 != 2)
+                    if (e == Error::network)
+                        cerr << "Error creating channel: " << msg << '\n';
+                    else
                     {
-                        cerr << "Error: status code " << s << '\n';
+                        cerr << "Error: reason " << msg << '\n';
                         callingCh->Hangup();
                     }
-                    else
-                        cout << "Call ok\n";
                 }
-            );
+            )
+            .After([]() { cout << "Call ok\n"; } );
     }
 
     void CalledChannel(const shared_ptr<Channel> calledCh)
