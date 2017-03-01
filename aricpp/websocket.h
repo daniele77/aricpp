@@ -119,7 +119,6 @@ private:
 
     void Read()
     {
-        beast::websocket::opcode ignoredOpcode;
         websocket.async_read(
             ignoredOpcode,
             wssb,
@@ -151,6 +150,9 @@ private:
     std::string request;
     ConnectHandler onConnection;
     ReceiveHandler onReceive;
+    // can't live in the stack because must be alive when the async_read completes,
+    // after the Read() method returns
+    beast::websocket::opcode ignoredOpcode;
 };
 
 } // namespace
