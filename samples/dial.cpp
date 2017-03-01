@@ -174,7 +174,7 @@ public:
 
                 auto tree = FromJson( body );
                 const string bridge = Get< string >( tree, {"id"} );
-                Bridge( bridge );
+                this->Bridge( bridge );
             }
         );
     }
@@ -189,7 +189,7 @@ public:
             client->RawCmd( "DELETE", "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
         else if ( ! other->empty() )
             client->RawCmd( "DELETE", "/ari/channels/" + *other, [](auto,auto,auto,auto){});
-        return ( hung->empty() && other->empty() );
+        return ( other->empty() );
     }
 
 private:

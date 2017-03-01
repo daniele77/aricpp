@@ -123,7 +123,8 @@ private:
         websocket.async_read(
             ignoredOpcode,
             wssb,
-            [this]( boost::system::error_code ec ) { Received( ec ); });
+            [this]( boost::system::error_code ec ) { Received( ec ); }
+        );
     }
 
     void Received( boost::system::error_code ec )

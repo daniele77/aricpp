@@ -114,12 +114,8 @@ public:
     Proxy& Destroy()
     {
         if ( IsDead() ) return Proxy::CreateEmpty();
-        return Proxy::Command(
-                    "DELETE",
-                    "/ari/bridges/" + id,
-                    client
-                )
-                .After( [this](int){ id.clear(); } );
+        id.clear();
+        return Proxy::Command("DELETE", "/ari/bridges/"+id, client);
     }
 
     bool IsDead() const { return id.empty(); }

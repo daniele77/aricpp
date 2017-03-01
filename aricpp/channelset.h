@@ -50,7 +50,7 @@ public:
 
     using ChannelPtr = std::shared_ptr<Channel>;
 
-    ChannelSet(Client& c) : client(c) { Subscribe(); }
+    explicit ChannelSet(Client& c) : client(c) { Subscribe(); }
 
     ChannelSet(const ChannelSet&) = delete;
     ChannelSet(const ChannelSet&&) = delete;
