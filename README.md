@@ -2,6 +2,17 @@
 Asterisk ARI interface bindings for modern C++
 
 
+## Properties
+
+* modern C++
+* multiplatform
+* header only
+* high level interface to manipulate asterisk concepts (channels, bridges, ...)
+* low level interface to send and receive ARI commands and events from asterisk
+* fluent interface
+* efficient (tested with sipp traffic generator)
+
+
 ## Requirements
 
 aricpp relies on the following libraries:
@@ -25,9 +36,13 @@ compiling your source code.
 
 You can find some examples in the directory "samples".
 Each .cpp files correspond to an executable. You can compile each sample by including
-aricpp, boost and beast header files and linking boost system, boost program options and pthread.
+aricpp, boost and beast header files and linking boost system, boost program options
+(and pthread on linux).
 
-There are also a GNU make file (Makefile) and a Windows nmake file (makefile.win).
+Are also provided:
+* a GNU make file (Makefile)
+* a Windows nmake file (makefile.win)
+* a Visual Studio solution
 
 You can specify boost and beast library paths in the following ways:
 
@@ -46,6 +61,11 @@ example:
 Set the environment variables BOOST and BEAST. Then, from a visual studio console, use the command:
 
     nmake /f makefile.win
+	
+### Visual Studio solution
+
+Set the environment variables BOOST and BEAST. Then, open the file
+`aricpp/samples/aricpp_samples/aricpp_samples.sln`
 
 
 ## Compilation of the Doxygen documentation
@@ -113,3 +133,60 @@ client.RawCmd(
     }
 );
 ```
+
+aricpp also provides an higher level interface, with which you can manipulate
+asterisk telephonic objects (e.g., channels).
+
+To use this interface, you need to create an istance of the class `ChannelSet`,
+on which you can register for channel events (`ChannelSet::OnStasisStarted`, 
+`ChannelSet::OnStasisDestroyed`, `ChannelSet::OnChannelStateChanged`) and
+create channels (`ChannelSet::CreateChannel()`).
+
+All these methods gives you references to `Channel` objects, that provide the methods
+for the usual actions on asterisk channels (e.g., ring, answer, hangup, dial, ...).
+
+```C++
+boost::asio::io_service ios;
+aricpp::Client client(ios, host, port, username, password, stasisapp);
+ChannelSet channels( client );
+
+client.Connect( [&](boost::system::error_code e){
+	if (e)
+	{
+		cerr << "Connection error: " << e.message() << endl;
+		ios.stop();
+	}
+	else
+	{
+		cout << "Connected" << endl;
+		
+		channels.OnStasisStarted(
+            [this](shared_ptr<Channel> ch, bool external)
+            {
+                if (external) CallingChannel(ch);
+                else CalledChannel(ch);
+            }
+        );
+		
+        auto ch = channels.CreateChannel();
+        ch->Call("sip/100", stasisapp, "caller name")
+            .OnError([callingCh](Error e, const string& msg)
+                {
+                    if (e == Error::network)
+                        cerr << "Error creating channel: " << msg << '\n';
+                    else
+                    {
+                        cerr << "Error: reason " << msg << '\n';
+                    }
+                }
+            )
+            .After([]() { cout << "Call ok\n"; } );
+	}
+});
+...
+ios.run();
+```
+
+The high and low level interface can coexist. Being the high level interface still
+under development, you can use the low level interface for the missing commands.
+
