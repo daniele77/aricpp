@@ -23,13 +23,17 @@
 *.exe
 *.out
 *.app
-dial
-query
-chat
 
 # Project files
 .project
 .cproject
+.idb
+.ipch
+.pch
+.sdf
+.suo
 
 # Other
 .svn
+Debug
+Release
