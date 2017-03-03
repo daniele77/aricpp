@@ -46,7 +46,7 @@ namespace
         "abcdefghijklmnopqrstuvwxyz"
         "0123456789+/";
 
-    std::string Base64Encode( const std::string& toEncode )
+    inline std::string Base64Encode( const std::string& toEncode )
     {
         std::string ret;
         std::array< unsigned char, 3 > char_array_3;
@@ -92,7 +92,7 @@ namespace
 
 } // anonymous namespace
 
-std::string GetBasicAuth( const std::string& user, const std::string& psw )
+inline std::string GetBasicAuth( const std::string& user, const std::string& psw )
 {
     return "Basic " + Base64Encode( user + ':' + psw );
 }

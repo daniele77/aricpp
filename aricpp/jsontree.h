@@ -65,7 +65,7 @@ template <typename T> T Get(const JsonTree& e, const std::vector<std::string>& p
     return e.get<T>(s);
 }
 
-template <> std::vector<std::string> Get(const JsonTree& e, const std::vector<std::string>& path)
+template <> inline std::vector<std::string> Get(const JsonTree& e, const std::vector<std::string>& path)
 {
     assert( !path.empty() );
     std::string s;
