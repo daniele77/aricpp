@@ -37,73 +37,11 @@
 #include <string>
 #include "client.h"
 #include "proxy.h"
+#include "terminationdtmf.h"
 
 namespace aricpp
 {
 
-///////////////////////////////////////////////////////////////
-// Dir smart enum
-
-// all this machinery to initialize static members in the header file
-
-class Direction; // forward declaration
-
-template<class Dummy>
-struct DirectionBase
-{
-    static const Direction none;
-    static const Direction both;
-    static const Direction in;
-    static const Direction out;
-};
-
-class Direction : public DirectionBase<void>
-{
-public:
-    operator std::string() const { return value; }
-private:
-    friend struct DirectionBase<void>;
-    Direction(const char* v) : value(v) {}
-    const std::string value;
-};
-
-template<class Dummy> const Direction DirectionBase<Dummy>::none{"none"};
-template<class Dummy> const Direction DirectionBase<Dummy>::both{"both"};
-template<class Dummy> const Direction DirectionBase<Dummy>::in{"in"};
-template<class Dummy> const Direction DirectionBase<Dummy>::out{"out"};
-
-///////////////////////////////////////////////////////////////
-// TerminationDtmf smart enum
-
-// all this machinery to initialize static members in the header file
-
-class TerminationDtmf; // forward declaration
-
-template<class Dummy>
-struct TerminationDtmfBase
-{
-    static const TerminationDtmf none;
-    static const TerminationDtmf any;
-    static const TerminationDtmf asterisk;
-    static const TerminationDtmf pound;
-};
-
-class TerminationDtmf : public TerminationDtmfBase<void>
-{
-public:
-    operator std::string() const { return value; }
-private:
-    friend struct TerminationDtmfBase<void>;
-    TerminationDtmf(const char* v) : value(v) {}
-    const std::string value;
-};
-
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::none{"none"};
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::any{"any"};
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::asterisk{"*"};
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::pound{"#"};
-
-///////////////////////////////////////////////////////////////
 
 class Channel
 {
@@ -124,6 +62,35 @@ public:
         mute,
         unknown
     };
+
+        ///////////////////////////////////////////////////////////////
+        // Direction smart enum
+
+        // all this machinery to initialize static members in the header file
+
+        class Direction; // forward declaration
+
+        template<class Dummy>
+        struct DirectionBase
+        {
+            static const Direction none;
+            static const Direction both;
+            static const Direction in;
+            static const Direction out;
+        };
+
+        class Direction : public DirectionBase<void>
+        {
+        public:
+            operator std::string() const { return value; }
+        private:
+            friend struct DirectionBase<void>;
+            Direction(const char* v) : value(v) {}
+            const std::string value;
+        };
+
+        ///////////////////////////////////////////////////////////////
+
 
     Channel(const Channel& rhs) = delete;
     Channel& operator=(const Channel& rhs) = delete;
@@ -351,6 +318,11 @@ private:
     std::string callerNum;
     std::string callerName;
 };
+
+template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::none{"none"};
+template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::both{"both"};
+template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::in{"in"};
+template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::out{"out"};
 
 } // namespace
 

@@ -37,6 +37,7 @@
 #include <string>
 #include "client.h"
 #include "proxy.h"
+#include "terminationdtmf.h"
 
 namespace aricpp
 {
@@ -44,6 +45,32 @@ namespace aricpp
 class Bridge
 {
 public:
+
+    ///////////////////////////////////////////////////////////////
+    // Role smart enum
+
+    // all this machinery to initialize static members in the header file
+
+    class Role; // forward declaration
+
+    template<class Dummy>
+    struct RoleBase
+    {
+        static const Role announce;
+        static const Role partecipant;
+    };
+
+    class Role : public RoleBase<void>
+    {
+    public:
+        operator std::string() const { return value; }
+    private:
+        friend struct RoleBase<void>;
+        Role(const char* v) : value(v) {}
+        const std::string value;
+    };
+
+    ///////////////////////////////////////////////////////////////
 
     Bridge(const Bridge& rhs) = delete;
     Bridge& operator=(const Bridge& rhs) = delete;
@@ -82,12 +109,13 @@ public:
         );
     }
 
-    Proxy& Add(const Channel& ch)
+    Proxy& Add(const Channel& ch, Role role=Role::partecipant)
     {
         return Proxy::Command(
             "POST",
             "/ari/bridges/" + id +
-            "/addChannel?channel=" + ch.Id(),
+            "/addChannel?channel=" + ch.Id() +
+            "&role=" + static_cast<std::string>(role),
             client
         );
     }
@@ -111,6 +139,51 @@ public:
         );
     }
 
+    Proxy& StartMoh(const std::string& mohClass={})
+    {
+        std::string query = "/ari/bridges/" + id + "/moh";
+        if ( !mohClass.empty() ) query += "?mohClass" + mohClass;
+        return Proxy::Command("POST", std::move(query), client);
+    }
+
+    Proxy& StopMoh()
+    {
+        return Proxy::Command("DELETE", "/ari/bridges/" + id + "/moh", client);
+    }
+
+    Proxy& Play(const std::string& media, const std::string& lang={},
+                const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/bridges/"+id+"/play?"
+            "media=" + media +
+            ( lang.empty() ? "" : "&lang=" + lang ) +
+            ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
+            ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
+            ( skipms < 0 ? "" : "&skipms=" + std::to_string(skipms) ),
+            client
+        );
+    }
+
+    Proxy& Record(const std::string& name, const std::string& format,
+                  int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
+                  const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/bridges/"+id+"/record?"
+            "name=" + name +
+            "&format=" + format +
+            "&terminateOn=" + static_cast<std::string>(terminateOn) +
+            ( beep ? "&beep=true" : "&beep=false" ) +
+            ( ifExists.empty() ? "" : "&ifExists=" + ifExists ) +
+            ( maxDurationSeconds < 0 ? "" : "&maxDurationSeconds=" + std::to_string(maxDurationSeconds) ) +
+            ( maxSilenceSeconds < 0 ? "" : "&maxSilenceSeconds=" + std::to_string(maxSilenceSeconds) ),
+            client
+        );
+    }
+
     Proxy& Destroy()
     {
         if ( IsDead() ) return Proxy::CreateEmpty();
@@ -126,6 +199,9 @@ private:
     Client* client;
 };
 
-} // namespace
+template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::announce{"announce"};
+template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::partecipant{"partecipant"};
+
+} // namespace aricpp
 
 #endif
