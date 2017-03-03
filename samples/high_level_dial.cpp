@@ -52,8 +52,8 @@ enum class ChMode { calling=1, called=2, both=3 };
 class Call
 {
 public:
-    Call( Client& c, shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh ) :
-        client(&c), calling(callingCh), called(calledCh)
+    Call( Client& c, shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh, bool _moh ) :
+        client(&c), calling(callingCh), called(calledCh), moh(_moh)
     {}
 
     bool HasChannel(const Channel& ch, ChMode mode) const
@@ -62,7 +62,11 @@ public:
                  ( ( called->Id()  == ch.Id() ) && ( static_cast<int>(mode) & static_cast<int>(ChMode::called)  ) ) );
     }
 
-    void DialedChRinging() { calling->Ring(); }
+    void DialedChRinging()
+    {
+        if (moh) calling->StartMoh();
+        else calling->Ring();
+    }
 
     void DialedChStart() { calling->Answer(); }
 
@@ -87,12 +91,14 @@ private:
     shared_ptr<Channel> calling;
     shared_ptr<Channel> called;
     unique_ptr<Bridge> bridge;
+    bool moh;
 };
 
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c, ChannelSet& m) : application(app), connection(c), channels(m)
+    CallContainer(const string& app, Client& c, ChannelSet& m, bool _moh) :
+        application(app), connection(c), channels(m), moh(_moh)
     {
         channels.OnStasisStarted(
             [this](shared_ptr<Channel> ch, bool external)
@@ -178,7 +184,7 @@ private:
 
     void Create(shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh)
     {
-        calls.emplace_back(make_shared<Call>(connection, callingCh, calledCh));
+        calls.emplace_back(make_shared<Call>(connection, callingCh, calledCh, moh));
     }
 
     void Remove(shared_ptr<Call> call)
@@ -198,6 +204,7 @@ private:
     Client& connection;
     vector<shared_ptr<Call>> calls;
     ChannelSet& channels;
+    bool moh;
 };
 
 
@@ -210,6 +217,7 @@ int main( int argc, char* argv[] )
         string username = "asterisk";
         string password = "asterisk";
         string application = "attendant";
+        bool moh = false;
 
         namespace po = boost::program_options;
         po::options_description desc("Allowed options");
@@ -222,6 +230,7 @@ int main( int argc, char* argv[] )
             ("username,u", po::value(&username), ("username of the ARI account on the server ["s + username + "]").c_str())
             ("password,p", po::value(&password), ("password of the ARI account on the server ["s + password + "]").c_str())
             ("application,a", po::value(&application), ("stasis application to use ["s + application + "]").c_str())
+            ("moh,m", po::bool_switch(&moh), ("play music on hold instead of ringing ["s + to_string(moh) + "]").c_str())
         ;
 
         po::variables_map vm;
@@ -260,7 +269,7 @@ int main( int argc, char* argv[] )
 
         Client client( ios, host, port, username, password, application );
         ChannelSet channels( client );
-        CallContainer calls( application, client, channels );
+        CallContainer calls( application, client, channels, moh );
 
         client.Connect( [&](boost::system::error_code e){
             if (e)

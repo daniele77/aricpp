@@ -41,6 +41,70 @@
 namespace aricpp
 {
 
+///////////////////////////////////////////////////////////////
+// Dir smart enum
+
+// all this machinery to initialize static members in the header file
+
+class Direction; // forward declaration
+
+template<class Dummy>
+struct DirectionBase
+{
+    static const Direction none;
+    static const Direction both;
+    static const Direction in;
+    static const Direction out;
+};
+
+class Direction : public DirectionBase<void>
+{
+public:
+    operator std::string() const { return value; }
+private:
+    friend struct DirectionBase<void>;
+    Direction(const char* v) : value(v) {}
+    const std::string value;
+};
+
+template<class Dummy> const Direction DirectionBase<Dummy>::none{"none"};
+template<class Dummy> const Direction DirectionBase<Dummy>::both{"both"};
+template<class Dummy> const Direction DirectionBase<Dummy>::in{"in"};
+template<class Dummy> const Direction DirectionBase<Dummy>::out{"out"};
+
+///////////////////////////////////////////////////////////////
+// TerminationDtmf smart enum
+
+// all this machinery to initialize static members in the header file
+
+class TerminationDtmf; // forward declaration
+
+template<class Dummy>
+struct TerminationDtmfBase
+{
+    static const TerminationDtmf none;
+    static const TerminationDtmf any;
+    static const TerminationDtmf asterisk;
+    static const TerminationDtmf pound;
+};
+
+class TerminationDtmf : public TerminationDtmfBase<void>
+{
+public:
+    operator std::string() const { return value; }
+private:
+    friend struct TerminationDtmfBase<void>;
+    TerminationDtmf(const char* v) : value(v) {}
+    const std::string value;
+};
+
+template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::none{"none"};
+template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::any{"any"};
+template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::asterisk{"*"};
+template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::pound{"#"};
+
+///////////////////////////////////////////////////////////////
+
 class Channel
 {
 public:
@@ -73,22 +137,79 @@ public:
         StateChanged(_state);
     }
 
-    Proxy& Ring()
+    Proxy& Ring() const
     {
         return Proxy::Command("POST", "/ari/channels/"+id+"/ring", client);
     }
 
-    Proxy& Answer()
+    Proxy& RingStop() const
+    {
+        return Proxy::Command("DELETE", "/ari/channels/"+id+"/ring", client);
+    }
+
+    Proxy& Mute(Direction dir=Direction::both) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/channels/" + id + "/mute?"
+            "direction=" + static_cast<std::string>(dir),
+            client
+        );
+    }
+
+    Proxy& Unmute(Direction dir=Direction::both) const
+    {
+        return Proxy::Command(
+            "DELETE",
+            "/ari/channels/" + id + "/mute?"
+            "direction=" + static_cast<std::string>(dir),
+            client
+        );
+    }
+
+    Proxy& Hold() const
+    {
+        return Proxy::Command("POST", "/ari/channels/"+id+"/hold", client);
+    }
+
+    Proxy& Unhold() const
+    {
+        return Proxy::Command("DELETE", "/ari/channels/"+id+"/hold", client);
+    }
+
+    Proxy& Silence() const
+    {
+        return Proxy::Command("POST", "/ari/channels/"+id+"/silence", client);
+    }
+
+    Proxy& StopSilence() const
+    {
+        return Proxy::Command("DELETE", "/ari/channels/"+id+"/silence", client);
+    }
+
+    Proxy& StartMoh(const std::string& mohClass={}) const
+    {
+        std::string query = "/ari/channels/"+id+"/moh";
+        if (!mohClass.empty()) query += "?mohClass=" + mohClass;
+        return Proxy::Command("POST", std::move(query), client);
+    }
+
+    Proxy& StopMoh() const
+    {
+        return Proxy::Command("DELETE", "/ari/channels/"+id+"/moh", client);
+    }
+
+    Proxy& Answer() const
     {
         return Proxy::Command("POST", "/ari/channels/"+id+"/answer", client);
     }
 
-    Proxy& Hangup()
+    Proxy& Hangup() const
     {
         return Proxy::Command("DELETE", "/ari/channels/"+id, client);
     }
 
-    Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId)
+    Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId) const
     {
         return Proxy::Command(
             "POST",
@@ -99,6 +220,84 @@ public:
             "&callerId=" + callerId +
             "&timeout=-1"
             "&appArgs=internal",
+            client
+        );
+    }
+
+    Proxy& Redirect(const std::string& endpoint) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/channels/"+id+"/redirect?"
+            "endpoint=" + endpoint,
+            client
+        );
+    }
+
+    Proxy& SendDtmf(const std::string& dtmf, int between=-1, int duration=-1, int before=-1, int after=-1) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/channels/"+id+"/dtmf?"
+            "dtmf=" + dtmf +
+            ( between < 0 ? "" : "&between=" + std::to_string(between) ) +
+            ( duration < 0 ? "" : "&duration=" + std::to_string(duration) ) +
+            ( before < 0 ? "" : "&before=" + std::to_string(before) ) +
+            ( after < 0 ? "" : "&after=" + std::to_string(after) ),
+            client
+        );
+    }
+
+    Proxy& Play(const std::string& media, const std::string& lang={},
+                const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/channels/"+id+"/play?"
+            "media=" + media +
+            ( lang.empty() ? "" : "&lang=" + lang ) +
+            ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
+            ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
+            ( skipms < 0 ? "" : "&skipms=" + std::to_string(skipms) ),
+            client
+        );
+    }
+
+    Proxy& Record(const std::string& name, const std::string& format,
+                  int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
+                  const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/channels/"+id+"/record?"
+            "name=" + name +
+            "&format=" + format +
+            "&terminateOn=" + static_cast<std::string>(terminateOn) +
+            ( beep ? "&beep=true" : "&beep=false" ) +
+            ( ifExists.empty() ? "" : "&ifExists=" + ifExists ) +
+            ( maxDurationSeconds < 0 ? "" : "&maxDurationSeconds=" + std::to_string(maxDurationSeconds) ) +
+            ( maxSilenceSeconds < 0 ? "" : "&maxSilenceSeconds=" + std::to_string(maxSilenceSeconds) ),
+            client
+        );
+    }
+
+    Proxy& SetVar(const std::string& var, const std::string& value={}) const
+    {
+        std::string query = "/ari/channels/"+id+"/variable?variable=" + var;
+        if (!value.empty()) query += "&value=" + value;
+        return Proxy::Command("POST", std::move(query), client);
+    }
+
+    Proxy& Snoop(const std::string& app, Direction spy=Direction::none, Direction whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
+    {
+        return Proxy::Command(
+            "POST",
+            "/ari/channels/"+id+"/snoop?"
+            "app=" + app +
+            "&spy=" + static_cast<std::string>(spy) +
+            "&whisper=" + static_cast<std::string>(whisper) +
+            ( appArgs.empty() ? "" : "&appArgs=" + appArgs ) +
+            ( snoopId.empty() ? "" : "&snoopId=" + snoopId ),
             client
         );
     }
