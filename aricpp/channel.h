@@ -282,7 +282,7 @@ public:
 
 private:
 
-    friend class ChannelSet;
+    friend class AriModel;
     void StasisStart( const std::string& _name, const std::string& _ext,
                       const std::string& _callerNum, const std::string& _callerName)
     {

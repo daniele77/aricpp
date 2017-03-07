@@ -77,12 +77,12 @@ public:
         websocket.Close();
     }
 
-    void Connect( const ConnectHandler& h )
+    void Connect( ConnectHandler h )
     {
-        onConnection = h;
+        onConnection = std::move(h);
         websocket.Connect( "/ari/events?api_key="+user+":"+password+"&app="+application+"&subscribeAll=true", [this](auto e){
             if (e) onConnection(e);
-            else this->WebsocketConnected(); // gcc requires this
+            else this->WebsocketConnected(); // gcc requires "this"
         } );
     }
 

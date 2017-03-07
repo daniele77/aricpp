@@ -31,8 +31,8 @@
  ******************************************************************************/
 
 
-#ifndef ARICPP_CHANNELSET_H_
-#define ARICPP_CHANNELSET_H_
+#ifndef ARICPP_ARIMODEL_H_
+#define ARICPP_ARIMODEL_H_
 
 #include <memory>
 #include <functional>
@@ -44,18 +44,18 @@
 namespace aricpp
 {
 
-class ChannelSet
+class AriModel
 {
 public:
 
     using ChannelPtr = std::shared_ptr<Channel>;
 
-    explicit ChannelSet(Client& c) : client(c) { Subscribe(); }
+    explicit AriModel(Client& c) : client(c) { Subscribe(); }
 
-    ChannelSet(const ChannelSet&) = delete;
-    ChannelSet(const ChannelSet&&) = delete;
-    ChannelSet& operator=(const ChannelSet&) = delete;
-    ChannelSet& operator=(const ChannelSet&&) = delete;
+    AriModel(const AriModel&) = delete;
+    AriModel(const AriModel&&) = delete;
+    AriModel& operator=(const AriModel&) = delete;
+    AriModel& operator=(const AriModel&&) = delete;
 
     using ChHandler = std::function<void(ChannelPtr)>;
     using StasisStartedHandler = std::function<void(ChannelPtr, bool)>;
@@ -67,8 +67,8 @@ public:
 
     ChannelPtr CreateChannel()
     {
-        // generate an id for the called
-        const std::string id = "aricpp-" + std::to_string(nextId++);
+        // generate an id for the new channel
+        const std::string id = "aricpp-c" + std::to_string(nextId++);
         auto it = channels.emplace(id, std::make_shared<Channel>(client, id));
         return it.first->second;
     }
@@ -84,7 +84,7 @@ private:
                 auto state = Get<std::string>( e, {"channel", "state"} );
                 auto id = Get<std::string>( e, {"channel", "id"} );
                 auto findResult = channels.find(id);
-                std::shared_ptr<Channel> channel;
+                ChannelPtr channel;
                 if ( findResult == channels.end() )
                 {
                     auto it = channels.emplace(id, std::make_shared<Channel>(client, id, state));

@@ -89,7 +89,7 @@ private:
         return *std::make_shared<Proxy>();
     }
 
-    static Proxy& Command(std::string&& method, std::string&& request, Client* client)
+    static Proxy& Command(std::string method, std::string request, Client* client)
     {
         auto proxy = std::make_shared<Proxy>();
         client->RawCmd(

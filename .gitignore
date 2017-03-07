@@ -25,6 +25,7 @@
 *.app
 
 # Project files
+.vscode
 .project
 .cproject
 .idb

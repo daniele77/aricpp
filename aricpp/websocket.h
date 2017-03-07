@@ -34,12 +34,15 @@
 #ifndef ARICPP_WEBSOCKET_H_
 #define ARICPP_WEBSOCKET_H_
 
+//#define ARICPP_TRACE_WEBSOCKET
+
 #include <string>
 #include <boost/asio.hpp>
 #include <beast/core.hpp>
 #include <beast/websocket.hpp>
-
-//#define ARICPP_TRACE_WEBSOCKET
+#ifdef ARICPP_TRACE_WEBSOCKET
+    #include <iostream>
+#endif
 
 namespace aricpp
 {
@@ -65,10 +68,10 @@ public:
         Close();
     }
 
-    void Connect( const std::string& req, const ConnectHandler& h )
+    void Connect( std::string req, ConnectHandler h )
     {
-        request = req;
-        onConnection = h;
+        request = std::move(req);
+        onConnection = std::move(h);
         resolver.async_resolve(
             boost::asio::ip::tcp::resolver::query{ host, port },
             [this]( const boost::system::error_code& ec, boost::asio::ip::tcp::resolver::iterator i )
@@ -83,15 +86,16 @@ public:
     {
         if ( socket.is_open() )
         {
-            websocket.close( beast::websocket::close_code::normal );
+            if ( connected )
+                websocket.close( beast::websocket::close_code::normal );
             socket.cancel();
             socket.close();
         }
     }
 
-    void Receive( const ReceiveHandler& h )
+    void Receive( ReceiveHandler h )
     {
-        onReceive = h;
+        onReceive = std::move(h);
         Read();
     }
 
@@ -113,6 +117,7 @@ private:
     void Connected()
     {
         websocket.async_handshake( host, request, [this]( beast::error_code ec ){
+            connected = true;
             onConnection( ec );
         });
     }
@@ -138,6 +143,7 @@ private:
         if ( ec != boost::asio::error::eof && ec != boost::asio::error::operation_aborted ) Read();
     }
 
+    bool connected = false;
     boost::asio::io_service& ios;
     const std::string host;
     const std::string port;

@@ -39,10 +39,10 @@
 #include <string>
 #include <vector>
 
+#include "../aricpp/arimodel.h"
 #include "../aricpp/client.h"
 #include "../aricpp/channel.h"
 #include "../aricpp/bridge.h"
-#include "../aricpp/channelset.h"
 
 using namespace aricpp;
 using namespace std;
@@ -97,7 +97,7 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c, ChannelSet& m, bool _moh) :
+    CallContainer(const string& app, Client& c, AriModel& m, bool _moh) :
         application(app), connection(c), channels(m), moh(_moh)
     {
         channels.OnStasisStarted(
@@ -203,7 +203,7 @@ private:
     const string application;
     Client& connection;
     vector<shared_ptr<Call>> calls;
-    ChannelSet& channels;
+    AriModel& channels;
     bool moh;
 };
 
@@ -268,7 +268,7 @@ int main( int argc, char* argv[] )
             });
 
         Client client( ios, host, port, username, password, application );
-        ChannelSet channels( client );
+        AriModel channels( client );
         CallContainer calls( application, client, channels, moh );
 
         client.Connect( [&](boost::system::error_code e){

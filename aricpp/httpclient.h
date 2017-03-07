@@ -71,10 +71,10 @@ public:
     HttpClient( HttpClient&& ) = delete;
     HttpClient& operator = ( const HttpClient& ) = delete;
 
-    void SendRequest( const std::string& _method, const std::string& _url, const ResponseHandler& res )
+    void SendRequest( std::string _method, std::string _url, ResponseHandler res )
     {
         // enqueue the new request
-        pending.emplace( _method, _url, res );
+        pending.emplace( std::move(_method), std::move(_url), std::move(res) );
         // if we're already handling another request, this one will be managed after
         // the others, so no need to connect (we're already connected)
         if ( pending.size() > 1 ) return;
@@ -94,8 +94,8 @@ private:
 
     struct Request
     {
-        Request(const std::string& _method, const std::string& _url, const ResponseHandler& h) :
-            method(_method), url(_url), onResponse(h)
+        Request(std::string _method, std::string _url, ResponseHandler h) :
+            method(std::move(_method)), url(std::move(_url)), onResponse(std::move(h))
         {}
 
         const std::string method;

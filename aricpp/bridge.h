@@ -86,24 +86,22 @@ public:
         return *this;
     }
 
-    // TODO: shouldn't destroy the physical resource,
-    // because we're calling the dtor when the BridgeDestroyed event is received
+    /// Destroy the object and the asterisk bridge
     ~Bridge() { Destroy(); }
-
-    /// Create an object handling a asterisk bridge already existing
-    Bridge(const std::string& _id, Client& _client) : id(_id), client(&_client) {}
 
     /// Create a new bridge on asterisk
     template<typename CreationHandler>
-    Bridge(Client& _client, CreationHandler h) : client(&_client)
+    Bridge(Client& _client, CreationHandler&& h) : client(&_client)
     {
         client->RawCmd(
             "POST",
             "/ari/bridges?type=mixing",
-            [this,h](auto,auto,auto,auto body)
+            [ this, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
             {
                 auto tree = FromJson(body);
                 id = Get<std::string>(tree, {"id"});
+                technology = Get<std::string>(tree, {"technology"});
+                bridge_type = Get<std::string>(tree, {"bridge_type"});
                 h();
             }
         );
@@ -196,6 +194,8 @@ public:
 private:
 
     std::string id;
+    std::string technology;
+    std::string bridge_type;
     Client* client;
 };
 
