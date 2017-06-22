@@ -58,7 +58,7 @@ public:
     using ResponseHandler = std::function< void( const boost::system::error_code&, int status, const std::string& reason, const std::string& body ) >;
 
     HttpClient( boost::asio::io_service& _ios, std::string _host, std::string _port, std::string user, std::string password ) :
-        ios(_ios), host(std::move(_host)), port(std::move(_port)), 
+        ios(_ios), host(std::move(_host)), port(std::move(_port)),
         auth( std::move(GetBasicAuth( user, password )) ),
         resolver(ios),
         socket(ios)
@@ -147,14 +147,14 @@ private:
 #ifdef ARICPP_TRACE_HTTP
         std::cout << "### => " << ToString(method) << " " << url << '\n';
 #endif
+
         beast::http::request<beast::http::empty_body> request;
+        request.version = 11;
         request.method(ToBeast(method));
         request.target(url);
-        request.version = 11;
-        //req.fields.insert( "Host", host + ":" + boost::lexical_cast<std::string>( httpSocket.remote_endpoint().port() ) );
         request.set( beast::http::field::host, host + ":" + port );
-        request.set( beast::http::field::user_agent, "aricpp" );
         request.set( beast::http::field::authorization, auth );
+        request.set( beast::http::field::user_agent, "aricpp" );
 
         // Set the Connection: close field, this way the server will close
         // the connection. This consumes less resources (no TIME_WAIT) because
@@ -162,12 +162,23 @@ private:
         //
         // request.set(beast::http::field::connection, "close");
 
-        request.prepare_payload();
+        // request.prepare_payload(); no need to prepare because we have empty body
 
+        // TODO: crash with the async call
+        // HELP: 
+#if 0
         beast::http::async_write( socket, std::move(request), [this](boost::system::error_code e){
+            if(e == beast::http::error::end_of_stream) socket.close();
             if ( e ) CallBack( e );
             else ReadResponse(); // no error, go on with read
         });
+#else
+        boost::system::error_code e;
+        beast::http::write( socket, std::move(request), e);
+        if(e == beast::http::error::end_of_stream) socket.close();
+        if ( e ) CallBack( e );
+        else ReadResponse(); // no error, go on with read
+#endif        
     }
 
     void ReadResponse()
