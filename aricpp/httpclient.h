@@ -162,6 +162,8 @@ private:
         //
         // request.set(beast::http::field::connection, "close");
 
+        request.prepare_payload();
+
         beast::http::async_write( socket, std::move(request), [this](boost::system::error_code e){
             if ( e ) CallBack( e );
             else ReadResponse(); // no error, go on with read
