@@ -31,61 +31,49 @@
  ******************************************************************************/
 
 
-#ifndef ARICPP_JSONTREE_H_
-#define ARICPP_JSONTREE_H_
+#ifndef ARICPP_METHOD_H_
+#define ARICPP_METHOD_H_
 
-#include <iostream>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <beast/http/verb.hpp>
+#include <string>
 
 namespace aricpp
 {
 
-// Json encapsulation
+enum class Method
+{
+    get,
+    post,
+    put,
+    delete_
+};
 
-using JsonTree = boost::property_tree::ptree;
-
-inline void Dump(const JsonTree& e) { boost::property_tree::write_json(std::cout, e); }
-inline std::string ToString(const JsonTree& e)
-{ 
-    std::string tmp;
-    boost::property_tree::write_json(tmp, e);
-    return tmp;
+/// Converts the Method enum class to a string
+inline std::string ToString(Method m)
+{
+    static const char* d[] =
+    {
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+    };
+    return d[ static_cast<std::underlying_type_t<Method>>(m) ];
 }
 
-inline JsonTree FromJson(const std::string& s)
+/// Converts the Method enum class to the equivalent Beast enum
+inline beast::http::verb ToBeast(Method m)
 {
-    boost::property_tree::ptree tree;
-    std::stringstream ss;
-    ss << s;
-    boost::property_tree::read_json( ss, tree );
-    return tree;
-}
-
-template <typename T> T Get(const JsonTree& e, const std::vector<std::string>& path)
-{
-    assert( !path.empty() );
-    std::string s;
-    for (const auto &piece : path) s += piece + '.';
-    s.pop_back();
-    return e.get<T>(s);
-}
-
-template <> inline std::vector<std::string> Get(const JsonTree& e, const std::vector<std::string>& path)
-{
-    assert( !path.empty() );
-    std::string s;
-    for (const auto &piece : path) s += piece + '.';
-    s.pop_back();
-
-    std::vector<std::string> result;
-    const auto& args = e.get_child(s);
-    for (auto& child: args)
-        result.push_back(child.second.get_value<std::string>());
-
-    return result;
+    static const beast::http::verb d[] =
+    {
+        beast::http::verb::get,
+        beast::http::verb::post,
+        beast::http::verb::put,
+        beast::http::verb::delete_
+    };
+    return d[ static_cast<std::underlying_type_t<Method>>(m) ];
 }
 
 } // namespace aricpp
 
-#endif // ARICPP_JSONTREE_H_
+#endif // ARICPP_METHOD_H_

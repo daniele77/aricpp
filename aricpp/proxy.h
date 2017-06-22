@@ -38,6 +38,7 @@
 #include <memory>
 #include "client.h"
 #include "errors.h"
+#include "method.h"
 
 namespace aricpp
 {
@@ -89,11 +90,11 @@ private:
         return *std::make_shared<Proxy>();
     }
 
-    static Proxy& Command(std::string method, std::string request, Client* client)
+    static Proxy& Command(Method method, std::string request, Client* client)
     {
         auto proxy = std::make_shared<Proxy>();
         client->RawCmd(
-            std::move(method),
+            method,
             std::move(request),
             [proxy](auto e, int state, auto reason, auto)
             {

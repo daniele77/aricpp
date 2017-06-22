@@ -106,18 +106,18 @@ public:
 
     Proxy& Ring() const
     {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/ring", client);
+        return Proxy::Command(Method::post, "/ari/channels/"+id+"/ring", client);
     }
 
     Proxy& RingStop() const
     {
-        return Proxy::Command("DELETE", "/ari/channels/"+id+"/ring", client);
+        return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/ring", client);
     }
 
     Proxy& Mute(Direction dir=Direction::both) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/channels/" + id + "/mute?"
             "direction=" + static_cast<std::string>(dir),
             client
@@ -127,7 +127,7 @@ public:
     Proxy& Unmute(Direction dir=Direction::both) const
     {
         return Proxy::Command(
-            "DELETE",
+            Method::delete_,
             "/ari/channels/" + id + "/mute?"
             "direction=" + static_cast<std::string>(dir),
             client
@@ -136,50 +136,50 @@ public:
 
     Proxy& Hold() const
     {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/hold", client);
+        return Proxy::Command(Method::post, "/ari/channels/"+id+"/hold", client);
     }
 
     Proxy& Unhold() const
     {
-        return Proxy::Command("DELETE", "/ari/channels/"+id+"/hold", client);
+        return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/hold", client);
     }
 
     Proxy& Silence() const
     {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/silence", client);
+        return Proxy::Command(Method::post, "/ari/channels/"+id+"/silence", client);
     }
 
     Proxy& StopSilence() const
     {
-        return Proxy::Command("DELETE", "/ari/channels/"+id+"/silence", client);
+        return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/silence", client);
     }
 
     Proxy& StartMoh(const std::string& mohClass={}) const
     {
         std::string query = "/ari/channels/"+id+"/moh";
         if (!mohClass.empty()) query += "?mohClass=" + mohClass;
-        return Proxy::Command("POST", std::move(query), client);
+        return Proxy::Command(Method::post, std::move(query), client);
     }
 
     Proxy& StopMoh() const
     {
-        return Proxy::Command("DELETE", "/ari/channels/"+id+"/moh", client);
+        return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/moh", client);
     }
 
     Proxy& Answer() const
     {
-        return Proxy::Command("POST", "/ari/channels/"+id+"/answer", client);
+        return Proxy::Command(Method::post, "/ari/channels/"+id+"/answer", client);
     }
 
     Proxy& Hangup() const
     {
-        return Proxy::Command("DELETE", "/ari/channels/"+id, client);
+        return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
 
     Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/channels?"
             "endpoint=" + endpoint +
             "&app=" + application +
@@ -194,7 +194,7 @@ public:
     Proxy& Redirect(const std::string& endpoint) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/channels/"+id+"/redirect?"
             "endpoint=" + endpoint,
             client
@@ -204,7 +204,7 @@ public:
     Proxy& SendDtmf(const std::string& dtmf, int between=-1, int duration=-1, int before=-1, int after=-1) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/channels/"+id+"/dtmf?"
             "dtmf=" + dtmf +
             ( between < 0 ? "" : "&between=" + std::to_string(between) ) +
@@ -219,7 +219,7 @@ public:
                 const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/channels/"+id+"/play?"
             "media=" + media +
             ( lang.empty() ? "" : "&lang=" + lang ) +
@@ -235,7 +235,7 @@ public:
                   const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/channels/"+id+"/record?"
             "name=" + name +
             "&format=" + format +
@@ -252,13 +252,13 @@ public:
     {
         std::string query = "/ari/channels/"+id+"/variable?variable=" + var;
         if (!value.empty()) query += "&value=" + value;
-        return Proxy::Command("POST", std::move(query), client);
+        return Proxy::Command(Method::post, std::move(query), client);
     }
 
     Proxy& Snoop(const std::string& app, Direction spy=Direction::none, Direction whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/channels/"+id+"/snoop?"
             "app=" + app +
             "&spy=" + static_cast<std::string>(spy) +

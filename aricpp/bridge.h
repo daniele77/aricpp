@@ -38,6 +38,7 @@
 #include "client.h"
 #include "proxy.h"
 #include "terminationdtmf.h"
+#include "method.h"
 
 namespace aricpp
 {
@@ -94,7 +95,7 @@ public:
     Bridge(Client& _client, CreationHandler&& h) : client(&_client)
     {
         client->RawCmd(
-            "POST",
+            Method::post,
             "/ari/bridges?type=mixing",
             [ this, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
             {
@@ -110,7 +111,7 @@ public:
     Proxy& Add(const Channel& ch, Role role=Role::partecipant)
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/bridges/" + id +
             "/addChannel?channel=" + ch.Id() +
             "&role=" + static_cast<std::string>(role),
@@ -124,13 +125,13 @@ public:
         for (auto ch=chs.begin(); ch!=chs.end(); ++ch)
             req += (*ch)->Id() + ',';
         req.pop_back(); // removes trailing ','
-        return Proxy::Command("POST", std::move(req), client);
+        return Proxy::Command(Method::post, std::move(req), client);
     }
 
     Proxy& Remove(const Channel& ch)
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/bridges/" + id +
             "/removeChannel?channel=" + ch.Id(),
             client
@@ -141,19 +142,19 @@ public:
     {
         std::string query = "/ari/bridges/" + id + "/moh";
         if ( !mohClass.empty() ) query += "?mohClass" + mohClass;
-        return Proxy::Command("POST", std::move(query), client);
+        return Proxy::Command(Method::post, std::move(query), client);
     }
 
     Proxy& StopMoh()
     {
-        return Proxy::Command("DELETE", "/ari/bridges/" + id + "/moh", client);
+        return Proxy::Command(Method::delete_, "/ari/bridges/" + id + "/moh", client);
     }
 
     Proxy& Play(const std::string& media, const std::string& lang={},
                 const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/bridges/"+id+"/play?"
             "media=" + media +
             ( lang.empty() ? "" : "&lang=" + lang ) +
@@ -169,7 +170,7 @@ public:
                   const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
     {
         return Proxy::Command(
-            "POST",
+            Method::post,
             "/ari/bridges/"+id+"/record?"
             "name=" + name +
             "&format=" + format +
@@ -186,7 +187,7 @@ public:
     {
         if ( IsDead() ) return Proxy::CreateEmpty();
         id.clear();
-        return Proxy::Command("DELETE", "/ari/bridges/"+id, client);
+        return Proxy::Command(Method::delete_, "/ari/bridges/"+id, client);
     }
 
     bool IsDead() const { return id.empty(); }

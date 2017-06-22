@@ -113,7 +113,7 @@ int main( int argc, char* argv[] )
                 auto sendRequest =
                     [&client,url]()
                     {
-                        client.RawCmd("PUT", url, [](auto,auto,auto,auto){});
+                        client.RawCmd(Method::put, url, [](auto,auto,auto,auto){});
                     };
                 ios.post( sendRequest );
             }

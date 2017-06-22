@@ -92,7 +92,7 @@ public:
     }
 
     template <typename ResponseHandler>
-    void RawCmd( const std::string& method, const std::string& url, ResponseHandler&& Response )
+    void RawCmd( Method method, const std::string& url, ResponseHandler&& Response )
     {
         httpclient.SendRequest( method, url, std::forward<ResponseHandler>(Response) );
     }
@@ -108,7 +108,7 @@ private:
                 this->RawEvent( msg ); // gcc requires this
         });
         // TODO: should become optional?
-        httpclient.SendRequest( "POST", "/ari/applications/"+application+"/subscription?eventSource=channel:,endpoint:,bridge:,deviceState:", [this](auto ec, auto, auto, auto){
+        httpclient.SendRequest( Method::post, "/ari/applications/"+application+"/subscription?eventSource=channel:,endpoint:,bridge:,deviceState:", [this](auto ec, auto, auto, auto){
             if ( ec ) std::cerr << ec.message() << std::endl; // TODO
             else onConnection( ec );
         });

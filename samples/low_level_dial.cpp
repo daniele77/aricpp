@@ -125,7 +125,7 @@ public:
 
     void DialedChRinging()
     {
-        client->RawCmd( "POST", "/ari/channels/" + dialing + "/ring", [](auto e,auto s,auto r,auto){
+        client->RawCmd( Method::post, "/ari/channels/" + dialing + "/ring", [](auto e,auto s,auto r,auto){
             if (e)
             {
                 cerr << "Error in ring request: " << e.message() << '\n';
@@ -142,7 +142,7 @@ public:
     void DialedChStart()
     {
         client->RawCmd(
-            "POST",
+            Method::post,
             "/ari/channels/" + dialing + "/answer",
             [](auto,auto status,auto,auto)
             {
@@ -157,7 +157,7 @@ public:
     void DialingChUp()
     {
         client->RawCmd(
-            "POST",
+            Method::post,
             "/ari/bridges?type=mixing",
             [this](auto e,auto s,auto r,auto body)
             {
@@ -186,9 +186,9 @@ public:
 
         hung->clear();
         if ( other->empty() && ! bridge.empty() )
-            client->RawCmd( "DELETE", "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
+            client->RawCmd( Method::delete_, "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
         else if ( ! other->empty() )
-            client->RawCmd( "DELETE", "/ari/channels/" + *other, [](auto,auto,auto,auto){});
+            client->RawCmd( Method::delete_, "/ari/channels/" + *other, [](auto,auto,auto,auto){});
         return ( other->empty() );
     }
 
@@ -201,7 +201,7 @@ private:
 #endif
         bridge = bridgeId;
         client->RawCmd(
-            "POST",
+            Method::post,
             "/ari/bridges/" + bridge + "/addChannel?channel=" + dialing + ',' + dialed,
             [](auto e,auto s,auto r,auto)
             {
@@ -308,7 +308,7 @@ private:
 
         // call the called party
         connection.RawCmd(
-            "POST",
+            Method::post,
             "/ari/channels?"
             "endpoint=sip/" + ext +
             "&app=" + application +
@@ -322,7 +322,7 @@ private:
                 if (s/100 != 2)
                 {
                     cerr << "Error: status code " << s << " reason: " << r << '\n';
-                    connection.RawCmd( "DELETE", "/ari/channels/"+callingId, [](auto,auto,auto,auto){});
+                    connection.RawCmd( Method::delete_, "/ari/channels/"+callingId, [](auto,auto,auto,auto){});
                 }
              }
         );

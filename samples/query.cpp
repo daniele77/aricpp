@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
         };
 
         std::for_each( requests.begin(), requests.end(), [&client](auto& request){
-            client.SendRequest( "GET", request, [&client,&request](auto error, auto state, auto reason, auto body ){
+            client.SendRequest( Method::get, request, [&client,&request](auto error, auto state, auto reason, auto body ){
                 std::cout << "\nREQUEST " << request << ":\n"
                           << "error: " << error.message() << '\n'
                           << "state: " << state << '\n'

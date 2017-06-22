@@ -40,6 +40,7 @@
 #include <beast/core.hpp>
 #include <beast/http.hpp>
 #include "basicauth.h"
+#include "method.h"
 
 //#define ARICPP_TRACE_HTTP
 //#define ARICPP_HTTP_TIMEOUT
@@ -71,10 +72,10 @@ public:
     HttpClient( HttpClient&& ) = delete;
     HttpClient& operator = ( const HttpClient& ) = delete;
 
-    void SendRequest( std::string _method, std::string _url, ResponseHandler res )
+    void SendRequest( Method _method, std::string _url, ResponseHandler res )
     {
         // enqueue the new request
-        pending.emplace( std::move(_method), std::move(_url), std::move(res) );
+        pending.emplace( _method, std::move(_url), std::move(res) );
         // if we're already handling another request, this one will be managed after
         // the others, so no need to connect (we're already connected)
         if ( pending.size() > 1 ) return;
@@ -94,20 +95,20 @@ private:
 
     struct Request
     {
-        Request(std::string _method, std::string _url, ResponseHandler h) :
-            method(std::move(_method)), url(std::move(_url)), onResponse(std::move(h))
+        Request(Method _method, std::string _url, ResponseHandler h) :
+            method(_method), url(std::move(_url)), onResponse(std::move(h))
         {}
 
-        const std::string method;
+        const Method method;
         const std::string url;
         const ResponseHandler onResponse;
     };
 
-    void CallBack( const boost::system::error_code& e, int status={}, const std::string& reason={}, const std::string& body={} )
+    void CallBack( const boost::system::error_code& e, beast::http::status status={}, const std::string& reason={}, const std::string& body={} )
     {
         assert( !pending.empty() );
 
-        pending.front().onResponse( e, status, reason, body );
+        pending.front().onResponse( e, static_cast<std::underlying_type_t<beast::http::status>>(status), reason, body );
         pending.pop();
 
         if ( pending.empty() )
@@ -144,18 +145,23 @@ private:
         auto url = pending.front().url;
 
 #ifdef ARICPP_TRACE_HTTP
-        std::cout << "### => " << method << " " << url << '\n';
+        std::cout << "### => " << ToString(method) << " " << url << '\n';
 #endif
         beast::http::request<beast::http::empty_body> request;
-        request.method = method;
-        request.url = url;
+        request.method(ToBeast(method));
+        request.target(url);
         request.version = 11;
         //req.fields.insert( "Host", host + ":" + boost::lexical_cast<std::string>( httpSocket.remote_endpoint().port() ) );
-        request.fields.insert( "Host", host + ":" + port );
-        request.fields.insert( "User-Agent", "aricpp" );
-        request.fields.insert( "Authorization", auth );
+        request.set( beast::http::field::host, host + ":" + port );
+        request.set( beast::http::field::user_agent, "aricpp" );
+        request.set( beast::http::field::authorization, auth );
 
-        beast::http::prepare( request );
+        // Set the Connection: close field, this way the server will close
+        // the connection. This consumes less resources (no TIME_WAIT) because
+        // of the graceful close. It also makes things go a little faster.
+        //
+        // request.set(beast::http::field::connection, "close");
+
         beast::http::async_write( socket, std::move(request), [this](boost::system::error_code e){
             if ( e ) CallBack( e );
             else ReadResponse(); // no error, go on with read
@@ -185,11 +191,11 @@ private:
             else
             {
 #ifdef ARICPP_TRACE_HTTP
-                std::cout << "### <= " << resp.status << " " << resp.reason << '\n';
+                std::cout << "### <= " << resp.result() << " " << resp.reason() << '\n';
                 if ( !resp.body.empty() )
                     std::cout << "       " << resp.body << '\n';
 #endif
-                CallBack( e, resp.status, resp.reason, resp.body );
+                CallBack( e, resp.result(), resp.reason().to_string(), resp.body );
             }
         });
     }
@@ -202,7 +208,7 @@ private:
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::socket socket;
 
-    beast::streambuf sb;
+    boost::asio::streambuf sb;
     beast::http::response<beast::http::string_body> resp;
 
     std::queue<Request> pending;

@@ -125,21 +125,21 @@ private:
     void Read()
     {
         websocket.async_read(
-            ignoredOpcode,
-            wssb,
+            rxData,
             [this]( boost::system::error_code ec ) { Received( ec ); }
         );
     }
 
     void Received( boost::system::error_code ec )
     {
+        std::string s( (std::istreambuf_iterator<char>(&rxData)), std::istreambuf_iterator<char>() );
 #ifdef ARICPP_TRACE_WEBSOCKET
         if ( ec ) std::cerr << "*** websocket error: " << ec.message() << '\n';
-        else std::cerr << "*** <== " << beast::to_string( wssb.data() ) << '\n';
+        else std::cerr << "*** <== " << s << '\n';
 #endif
         if ( ec ) onReceive( std::string(), ec );
-        else onReceive( beast::to_string( wssb.data() ), ec );
-        wssb.consume( wssb.size() );
+        else onReceive( s, ec );
+        rxData.consume( rxData.size() );
         if ( ec != boost::asio::error::eof && ec != boost::asio::error::operation_aborted ) Read();
     }
 
@@ -151,14 +151,11 @@ private:
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::socket socket;
     beast::websocket::stream< boost::asio::ip::tcp::socket& > websocket;
-    beast::streambuf wssb;
+    boost::asio::streambuf rxData;
 
     std::string request;
     ConnectHandler onConnection;
     ReceiveHandler onReceive;
-    // can't live in the stack because must be alive when the async_read completes,
-    // after the Read() method returns
-    beast::websocket::opcode ignoredOpcode;
 };
 
 } // namespace
