@@ -38,8 +38,8 @@
 
 #include <string>
 #include <boost/asio.hpp>
-#include <beast/core.hpp>
-#include <beast/websocket.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
 #ifdef ARICPP_TRACE_WEBSOCKET
     #include <iostream>
 #endif
@@ -87,7 +87,7 @@ public:
         if ( socket.is_open() )
         {
             if ( connected )
-                websocket.close( beast::websocket::close_code::normal );
+                websocket.close( boost::beast::websocket::close_code::normal );
             socket.cancel();
             socket.close();
         }
@@ -116,7 +116,7 @@ private:
 
     void Connected()
     {
-        websocket.async_handshake( host, request, [this]( beast::error_code ec ){
+        websocket.async_handshake( host, request, [this]( boost::beast::error_code ec ){
             connected = true;
             onConnection( ec );
         });
@@ -126,7 +126,7 @@ private:
     {
         websocket.async_read(
             rxData,
-            [this]( boost::system::error_code ec ) { Received( ec ); }
+            [this](boost::system::error_code ec, std::size_t /* bytes */ ) { Received( ec ); }
         );
     }
 
@@ -150,7 +150,7 @@ private:
 
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::socket socket;
-    beast::websocket::stream< boost::asio::ip::tcp::socket& > websocket;
+    boost::beast::websocket::stream< boost::asio::ip::tcp::socket& > websocket;
     boost::asio::streambuf rxData;
 
     std::string request;

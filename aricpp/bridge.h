@@ -99,11 +99,24 @@ public:
             "/ari/bridges?type=mixing",
             [ this, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
             {
-                auto tree = FromJson(body);
-                id = Get<std::string>(tree, {"id"});
-                technology = Get<std::string>(tree, {"technology"});
-                bridge_type = Get<std::string>(tree, {"bridge_type"});
-                h();
+                try
+                {
+                    auto tree = FromJson(body);
+                    id = Get<std::string>(tree, {"id"});
+                    technology = Get<std::string>(tree, {"technology"});
+                    bridge_type = Get<std::string>(tree, {"bridge_type"});
+                    h();
+                }
+                catch (const std::exception& e)
+                {
+                    // TODO
+                    std::cerr << "Exception in POST bridge response: " << e.what() << '\n';
+                }
+                catch (...)
+                {
+                    // TODO
+                    std::cerr << "Unknown exception in POST bridge response\n";
+                }
             }
         );
     }
@@ -186,8 +199,9 @@ public:
     Proxy& Destroy()
     {
         if ( IsDead() ) return Proxy::CreateEmpty();
+        auto tmp = id;
         id.clear();
-        return Proxy::Command(Method::delete_, "/ari/bridges/"+id, client);
+        return Proxy::Command(Method::delete_, "/ari/bridges/"+tmp, client);
     }
 
     bool IsDead() const { return id.empty(); }

@@ -92,9 +92,9 @@ public:
     }
 
     template <typename ResponseHandler>
-    void RawCmd( Method method, const std::string& url, ResponseHandler&& Response )
+    void RawCmd(Method method, const std::string& url, ResponseHandler&& Response)
     {
-        httpclient.SendRequest( method, url, std::forward<ResponseHandler>(Response) );
+        httpclient.SendRequest(method, url, std::forward<ResponseHandler>(Response));
     }
 
 private:
@@ -134,7 +134,7 @@ private:
                 catch (...)
                 {
                     // TODO
-                    std::cerr << "Exception in handler of event: " << type << '\n';
+                    std::cerr << "Unknown exception in handler of event: " << type << '\n';
                 }
             } );
         }

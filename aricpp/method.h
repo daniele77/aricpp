@@ -34,7 +34,7 @@
 #ifndef ARICPP_METHOD_H_
 #define ARICPP_METHOD_H_
 
-#include <beast/http/verb.hpp>
+#include <boost/beast/http/verb.hpp>
 #include <string>
 
 namespace aricpp
@@ -62,14 +62,14 @@ inline std::string ToString(Method m)
 }
 
 /// Converts the Method enum class to the equivalent Beast enum
-inline beast::http::verb ToBeast(Method m)
+inline boost::beast::http::verb ToBeast(Method m)
 {
-    static const beast::http::verb d[] =
+    static const boost::beast::http::verb d[] =
     {
-        beast::http::verb::get,
-        beast::http::verb::post,
-        beast::http::verb::put,
-        beast::http::verb::delete_
+        boost::beast::http::verb::get,
+        boost::beast::http::verb::post,
+        boost::beast::http::verb::put,
+        boost::beast::http::verb::delete_
     };
     return d[ static_cast<std::underlying_type_t<Method>>(m) ];
 }

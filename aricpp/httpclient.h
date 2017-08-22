@@ -37,8 +37,8 @@
 #include <string>
 #include <queue>
 #include <boost/asio.hpp>
-#include <beast/core.hpp>
-#include <beast/http.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
 #include "basicauth.h"
 #include "method.h"
 
@@ -104,11 +104,11 @@ private:
         const ResponseHandler onResponse;
     };
 
-    void CallBack( const boost::system::error_code& e, beast::http::status status={}, const std::string& reason={}, const std::string& body={} )
+    void CallBack( const boost::system::error_code& e, boost::beast::http::status status={}, const std::string& reason={}, const std::string& body={} )
     {
         assert( !pending.empty() );
 
-        pending.front().onResponse( e, static_cast<std::underlying_type_t<beast::http::status>>(status), reason, body );
+        pending.front().onResponse( e, static_cast<std::underlying_type_t<boost::beast::http::status>>(status), reason, body );
         pending.pop();
 
         if ( pending.empty() )
@@ -148,34 +148,34 @@ private:
         std::cout << "### => " << ToString(method) << " " << url << '\n';
 #endif
 
-        beast::http::request<beast::http::empty_body> request;
+        boost::beast::http::request<boost::beast::http::empty_body> request;
         request.version = 11;
         request.method(ToBeast(method));
         request.target(url);
-        request.set( beast::http::field::host, host + ":" + port );
-        request.set( beast::http::field::authorization, auth );
-        request.set( beast::http::field::user_agent, "aricpp" );
+        request.set( boost::beast::http::field::host, host + ":" + port );
+        request.set( boost::beast::http::field::authorization, auth );
+        request.set( boost::beast::http::field::user_agent, "aricpp" );
 
         // Set the Connection: close field, this way the server will close
         // the connection. This consumes less resources (no TIME_WAIT) because
         // of the graceful close. It also makes things go a little faster.
         //
-        // request.set(beast::http::field::connection, "close");
+        // request.set(boost::beast::http::field::connection, "close");
 
         // request.prepare_payload(); no need to prepare because we have empty body
 
         // TODO: crash with the async call
         // HELP: 
 #if 0
-        beast::http::async_write( socket, std::move(request), [this](boost::system::error_code e){
-            if(e == beast::http::error::end_of_stream) socket.close();
+        boost::beast::http::async_write( socket, std::move(request), [this](boost::system::error_code e){
+            if(e == boost::beast::http::error::end_of_stream) socket.close();
             if ( e ) CallBack( e );
             else ReadResponse(); // no error, go on with read
         });
 #else
         boost::system::error_code e;
-        beast::http::write( socket, std::move(request), e);
-        if(e == beast::http::error::end_of_stream) socket.close();
+        boost::beast::http::write( socket, std::move(request), e);
+        if(e == boost::beast::http::error::end_of_stream) socket.close();
         if ( e ) CallBack( e );
         else ReadResponse(); // no error, go on with read
 #endif        
@@ -195,7 +195,7 @@ private:
             }
         );
 #endif
-        beast::http::async_read( socket, sb, resp, [this](boost::system::error_code e){
+        boost::beast::http::async_read(socket, buffer, resp, [this](boost::system::error_code e){
 #ifdef ARICPP_HTTP_TIMEOUT
                 timer.cancel();
 #endif
@@ -210,6 +210,11 @@ private:
 #endif
                 CallBack( e, resp.result(), resp.reason().to_string(), resp.body );
             }
+
+            // in any case, clear the buffer and the response
+            buffer.consume(buffer.size());
+            boost::beast::http::response<boost::beast::http::string_body> emptyResp;
+            boost::beast::http::swap(resp, emptyResp);
         });
     }
 
@@ -221,8 +226,8 @@ private:
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::socket socket;
 
-    boost::asio::streambuf sb;
-    beast::http::response<beast::http::string_body> resp;
+    boost::beast::flat_buffer buffer; // (Must persist between reads)
+    boost::beast::http::response<boost::beast::http::string_body> resp;
 
     std::queue<Request> pending;
 #ifdef ARICPP_HTTP_TIMEOUT
