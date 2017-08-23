@@ -72,10 +72,10 @@ public:
     HttpClient( HttpClient&& ) = delete;
     HttpClient& operator = ( const HttpClient& ) = delete;
 
-    void SendRequest( Method _method, std::string _url, ResponseHandler res )
+    void SendRequest( Method _method, std::string _url, ResponseHandler res, std::string body={} )
     {
         // enqueue the new request
-        pending.emplace( _method, std::move(_url), std::move(res) );
+        pending.emplace( _method, std::move(_url), std::move(res), std::move(body) );
         // if we're already handling another request, this one will be managed after
         // the others, so no need to connect (we're already connected)
         if ( pending.size() > 1 ) return;
@@ -95,12 +95,13 @@ private:
 
     struct Request
     {
-        Request(Method _method, std::string _url, ResponseHandler h) :
-            method(_method), url(std::move(_url)), onResponse(std::move(h))
+        Request(Method _method, std::string _url, ResponseHandler h, std::string _body={}) :
+            method(_method), url(std::move(_url)), body(std::move(_body)), onResponse(std::move(h))
         {}
 
         const Method method;
         const std::string url;
+        const std::string body;
         const ResponseHandler onResponse;
     };
 
@@ -143,42 +144,28 @@ private:
         assert( !pending.empty() );
         auto method = pending.front().method;
         auto url = pending.front().url;
+        auto body = pending.front().body;
 
 #ifdef ARICPP_TRACE_HTTP
         std::cout << "### => " << ToString(method) << " " << url << '\n';
 #endif
 
-        boost::beast::http::request<boost::beast::http::empty_body> request;
+        // clear the request (beast does not provide a method to clear a request?!)
+        boost::beast::http::request<boost::beast::http::string_body>{}.swap(request);
+
         request.version = 11;
         request.method(ToBeast(method));
         request.target(url);
         request.set( boost::beast::http::field::host, host + ":" + port );
         request.set( boost::beast::http::field::authorization, auth );
         request.set( boost::beast::http::field::user_agent, "aricpp" );
-
-        // Set the Connection: close field, this way the server will close
-        // the connection. This consumes less resources (no TIME_WAIT) because
-        // of the graceful close. It also makes things go a little faster.
-        //
-        // request.set(boost::beast::http::field::connection, "close");
-
-        // request.prepare_payload(); no need to prepare because we have empty body
-
-        // TODO: crash with the async call
-        // HELP: 
-#if 0
-        boost::beast::http::async_write( socket, std::move(request), [this](boost::system::error_code e){
-            if(e == boost::beast::http::error::end_of_stream) socket.close();
+        request.set( boost::beast::http::field::content_type, "application/json" );
+        request.body = body;
+	    request.prepare_payload();
+        boost::beast::http::async_write( socket, request, [this](boost::system::error_code e){
             if ( e ) CallBack( e );
             else ReadResponse(); // no error, go on with read
         });
-#else
-        boost::system::error_code e;
-        boost::beast::http::write( socket, std::move(request), e);
-        if(e == boost::beast::http::error::end_of_stream) socket.close();
-        if ( e ) CallBack( e );
-        else ReadResponse(); // no error, go on with read
-#endif        
     }
 
     void ReadResponse()
@@ -228,6 +215,7 @@ private:
 
     boost::beast::flat_buffer buffer; // (Must persist between reads)
     boost::beast::http::response<boost::beast::http::string_body> resp;
+    boost::beast::http::request<boost::beast::http::string_body> request;
 
     std::queue<Request> pending;
 #ifdef ARICPP_HTTP_TIMEOUT

@@ -176,8 +176,14 @@ public:
         return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
 
-    Proxy& Call(const std::string& endpoint, const std::string& application, const std::string& callerId) const
-    {
+    Proxy& Call(
+        const std::string& endpoint,
+        const std::string& application,
+        const std::string& callerId,
+        std::string variables={}
+    ) const
+    {        
+        if (!variables.empty()) variables = "{\"variables\":"+variables+"}";
         return Proxy::Command(
             Method::post,
             "/ari/channels?"
@@ -187,7 +193,8 @@ public:
             "&callerId=" + callerId +
             "&timeout=-1"
             "&appArgs=internal",
-            client
+            client,
+            std::move(variables) // now http body :-)
         );
     }
 

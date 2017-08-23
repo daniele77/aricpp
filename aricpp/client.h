@@ -92,9 +92,9 @@ public:
     }
 
     template <typename ResponseHandler>
-    void RawCmd(Method method, const std::string& url, ResponseHandler&& Response)
+    void RawCmd(Method method, const std::string& url, ResponseHandler&& Response, std::string body={})
     {
-        httpclient.SendRequest(method, url, std::forward<ResponseHandler>(Response));
+        httpclient.SendRequest(method, url, std::forward<ResponseHandler>(Response), body);
     }
 
 private:

@@ -90,7 +90,7 @@ private:
         return *std::make_shared<Proxy>();
     }
 
-    static Proxy& Command(Method method, std::string request, Client* client)
+    static Proxy& Command(Method method, std::string request, Client* client, std::string body={})
     {
         auto proxy = std::make_shared<Proxy>();
         client->RawCmd(
@@ -107,7 +107,8 @@ private:
                     else
                         proxy->SetError(Error::unknown, reason);
                 }
-            }
+            },
+            std::move(body)
         );
         return *proxy;
     }

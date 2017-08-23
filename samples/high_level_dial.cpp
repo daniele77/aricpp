@@ -97,8 +97,13 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c, AriModel& m, bool _moh) :
-        application(app), connection(c), channels(m), moh(_moh)
+    CallContainer(const string& app, Client& c, AriModel& m, bool _moh, bool _autoAns, bool _sipCh) :
+        application(app),
+        connection(c), 
+        channels(m), 
+        moh(_moh),
+        inviteVariables(CalcVariables(_autoAns, _sipCh)),
+        chPrefix(CalcChPrefix(_sipCh))
     {
         channels.OnStasisStarted(
             [this](shared_ptr<Channel> ch, bool external)
@@ -158,7 +163,7 @@ private:
 
         auto calledCh = channels.CreateChannel();
         Create(callingCh, calledCh);
-        calledCh->Call("sip/"s+ext, application, callerName)
+        calledCh->Call(chPrefix+ext, application, callerName, inviteVariables)
             .OnError([callingCh](Error e, const string& msg)
                 {
                     if (e == Error::network)
@@ -200,11 +205,27 @@ private:
         return ( c == calls.end() ? shared_ptr<Call>() : *c );
     }
 
+    static string CalcVariables(bool autoAns, bool sipCh)
+    {
+        if (!autoAns) return {};
+
+        if (sipCh) return "{\"SIPADDHEADER0\":\"Call-Info:answer-after=0\"}";
+        else return "{\"PJSIP_HEADER(add,Call-info)\":\"answer-after=0\"}";
+    }
+
+    static string CalcChPrefix(bool sipCh)
+    {
+        return sipCh ? "sip/" : "pjsip/";
+    }
+
+
     const string application;
     Client& connection;
     vector<shared_ptr<Call>> calls;
     AriModel& channels;
-    bool moh;
+    const bool moh;
+    const string inviteVariables;
+    const string chPrefix;
 };
 
 
@@ -218,6 +239,8 @@ int main( int argc, char* argv[] )
         string password = "asterisk";
         string application = "attendant";
         bool moh = false;
+        bool autoAns = false;
+        bool sipCh = false; // default = pjsip channel
 
         namespace po = boost::program_options;
         po::options_description desc("Allowed options");
@@ -231,6 +254,8 @@ int main( int argc, char* argv[] )
             ("password,p", po::value(&password), ("password of the ARI account on the server ["s + password + "]").c_str())
             ("application,a", po::value(&application), ("stasis application to use ["s + application + "]").c_str())
             ("moh,m", po::bool_switch(&moh), ("play music on hold instead of ringing ["s + to_string(moh) + "]").c_str())
+            ("auto-answer,A", po::bool_switch(&autoAns), ("force the called endpoint to auto answer by using a custom header ["s + to_string(autoAns) + "]").c_str())
+            ("sip-channel,S", po::bool_switch(&sipCh), ("use old sip channel instead of pjsip channel ["s + to_string(sipCh) + "]").c_str())
         ;
 
         po::variables_map vm;
@@ -269,7 +294,7 @@ int main( int argc, char* argv[] )
 
         Client client( ios, host, port, username, password, application );
         AriModel channels( client );
-        CallContainer calls( application, client, channels, moh );
+        CallContainer calls( application, client, channels, moh, autoAns, sipCh );
 
         client.Connect( [&](boost::system::error_code e){
             if (e)
