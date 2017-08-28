@@ -23,6 +23,11 @@
 *.exe
 *.out
 *.app
+samples/chat
+samples/high_level_dial
+samples/low_level_dial
+samples/query
+
 
 # Project files
 .vscode

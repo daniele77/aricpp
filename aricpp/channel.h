@@ -38,6 +38,7 @@
 #include "client.h"
 #include "proxy.h"
 #include "terminationdtmf.h"
+#include "recording.h"
 
 namespace aricpp
 {
@@ -63,33 +64,33 @@ public:
         unknown
     };
 
-        ///////////////////////////////////////////////////////////////
-        // Direction smart enum
+    ///////////////////////////////////////////////////////////////
+    // Direction smart enum
 
-        // all this machinery to initialize static members in the header file
+    // all this machinery to initialize static members in the header file
 
-        class Direction; // forward declaration
+    class Direction; // forward declaration
 
-        template<class Dummy>
-        struct DirectionBase
-        {
-            static const Direction none;
-            static const Direction both;
-            static const Direction in;
-            static const Direction out;
-        };
+    template<class Dummy>
+    struct DirectionBase
+    {
+        static const Direction none;
+        static const Direction both;
+        static const Direction in;
+        static const Direction out;
+    };
 
-        class Direction : public DirectionBase<void>
-        {
-        public:
-            operator std::string() const { return value; }
-        private:
-            friend struct DirectionBase<void>;
-            Direction(const char* v) : value(v) {}
-            const std::string value;
-        };
+    class Direction : public DirectionBase<void>
+    {
+    public:
+        operator std::string() const { return value; }
+    private:
+        friend struct DirectionBase<void>;
+        Direction(const char* v) : value(v) {}
+        const std::string value;
+    };
 
-        ///////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////
 
 
     Channel(const Channel& rhs) = delete;
@@ -237,11 +238,12 @@ public:
         );
     }
 
-    Proxy& Record(const std::string& name, const std::string& format,
+    ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
                   int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
                   const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
     {
-        return Proxy::Command(
+        Recording recording(name, client);
+        return ProxyPar<Recording>::Command(
             Method::post,
             "/ari/channels/"+id+"/record?"
             "name=" + name +
@@ -251,7 +253,8 @@ public:
             ( ifExists.empty() ? "" : "&ifExists=" + ifExists ) +
             ( maxDurationSeconds < 0 ? "" : "&maxDurationSeconds=" + std::to_string(maxDurationSeconds) ) +
             ( maxSilenceSeconds < 0 ? "" : "&maxSilenceSeconds=" + std::to_string(maxSilenceSeconds) ),
-            client
+            client,
+            recording
         );
     }
 

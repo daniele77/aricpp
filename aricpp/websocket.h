@@ -63,7 +63,7 @@ public:
     WebSocket( WebSocket&& ) = delete;
     WebSocket& operator = ( const WebSocket& ) = delete;
 
-    ~WebSocket()
+    ~WebSocket() noexcept
     {
         Close();
     }
@@ -82,14 +82,21 @@ public:
         );
     }
 
-    void Close()
+    void Close() noexcept
     {
-        if ( socket.is_open() )
+        try
         {
-            if ( connected )
-                websocket.close( boost::beast::websocket::close_code::normal );
-            socket.cancel();
-            socket.close();
+            if ( socket.is_open() )
+            {
+                if ( connected )
+                    websocket.close( boost::beast::websocket::close_code::normal );
+                socket.cancel();
+                socket.close();
+            }
+        }
+        catch(const std::exception& e)
+        {
+            // nothing to do
         }
     }
 

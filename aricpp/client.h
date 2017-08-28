@@ -67,12 +67,12 @@ public:
     Client( Client&& ) = delete;
     Client& operator = ( const Client& ) = delete;
 
-    ~Client()
+    ~Client() noexcept
     {
         Close();
     }
 
-    void Close()
+    void Close() noexcept
     {
         websocket.Close();
     }

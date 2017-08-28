@@ -1,16 +1,21 @@
 <date>: <Version>
 
-        * Add Channel features
-        * Add Bridge features
-		* Fix linking problem whith multiple inclusion of channel.h
+2017-08-28: Version 0.0.3
+
+    * Use boost version of beast library
+    * Add Channel features
+    * Add Bridge features
+    * Fix linking problem whith multiple inclusion of channel.h
+    * High level interface for recordings
+    * Various bug fix
 
 2017-03-02: Version 0.0.2
 
-        * Basic high level interface (Channel)
-		* New samples
-		* Various bug fix
+    * Basic high level interface (Channel)
+    * New samples
+    * Various bug fix
 
 2017-02-02: Version 0.0.1
 
-        * Initial export
+    * Initial export
 

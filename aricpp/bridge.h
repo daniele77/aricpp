@@ -39,6 +39,7 @@
 #include "proxy.h"
 #include "terminationdtmf.h"
 #include "method.h"
+#include "recording.h"
 
 namespace aricpp
 {
@@ -178,11 +179,12 @@ public:
         );
     }
 
-    Proxy& Record(const std::string& name, const std::string& format,
+    ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
                   int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
                   const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
     {
-        return Proxy::Command(
+        Recording recording(name, client);
+        return ProxyPar<Recording>::Command(
             Method::post,
             "/ari/bridges/"+id+"/record?"
             "name=" + name +
@@ -192,7 +194,8 @@ public:
             ( ifExists.empty() ? "" : "&ifExists=" + ifExists ) +
             ( maxDurationSeconds < 0 ? "" : "&maxDurationSeconds=" + std::to_string(maxDurationSeconds) ) +
             ( maxSilenceSeconds < 0 ? "" : "&maxSilenceSeconds=" + std::to_string(maxSilenceSeconds) ),
-            client
+            client,
+            recording
         );
     }
 

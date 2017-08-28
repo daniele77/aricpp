@@ -15,9 +15,9 @@ Asterisk ARI interface bindings for modern C++
 
 ## Requirements
 
-aricpp relies on the following libraries:
+aricpp requires a c++14 compiler, and relies on the following libraries:
 * boost (www.boost.org)
-* beast (http://github.com/vinniefalco/Beast)
+* beast (http://github.com/boostorg/beast tested with bersion 108)
 
 
 ## Installation
@@ -137,10 +137,10 @@ client.RawCmd(
 aricpp also provides an higher level interface, with which you can manipulate
 asterisk telephonic objects (e.g., channels).
 
-To use this interface, you need to create an istance of the class `ChannelSet`,
-on which you can register for channel events (`ChannelSet::OnStasisStarted`, 
-`ChannelSet::OnStasisDestroyed`, `ChannelSet::OnChannelStateChanged`) and
-create channels (`ChannelSet::CreateChannel()`).
+To use this interface, you need to create an istance of the class `AriModel`,
+on which you can register for channel events (`AriModel::OnStasisStarted`, 
+`AriModel::OnStasisDestroyed`, `AriModel::OnChannelStateChanged`) and
+create channels (`AriModel::CreateChannel()`).
 
 All these methods gives you references to `Channel` objects, that provide the methods
 for the usual actions on asterisk channels (e.g., ring, answer, hangup, dial, ...).
@@ -148,7 +148,7 @@ for the usual actions on asterisk channels (e.g., ring, answer, hangup, dial, ..
 ```C++
 boost::asio::io_service ios;
 aricpp::Client client(ios, host, port, username, password, stasisapp);
-ChannelSet channels( client );
+AriModel channels( client );
 
 client.Connect( [&](boost::system::error_code e){
 	if (e)
@@ -186,6 +186,9 @@ client.Connect( [&](boost::system::error_code e){
 ...
 ios.run();
 ```
+
+See the sample `high_level_dial.cpp` (located in directory `samples`) to have a
+full working example.
 
 The high and low level interface can coexist. Being the high level interface still
 under development, you can use the low level interface for the missing commands.

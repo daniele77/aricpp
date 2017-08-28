@@ -43,24 +43,25 @@
 namespace aricpp
 {
 
-class Proxy
+template <typename T>
+class ProxyImpl
 {
 public:
     using ErrorHandler = std::function<void(Error,const std::string&)>;
-    using AfterHandler = std::function<void(void)>;
+    using AfterHandler = std::function<void(T)>;
 
-    Proxy& After(AfterHandler f)
+    ProxyImpl& After(AfterHandler f)
     {
         if ( afterHandler ) // sequence of std::function
         {
             auto g = afterHandler;
-            afterHandler = [g,f](){ g(); f(); };
+            afterHandler = [g,f](T t){ g(t); f(t); };
         }
         else
             afterHandler = f;
         return *this;
     }
-    Proxy& OnError(ErrorHandler f)
+    ProxyImpl& OnError(ErrorHandler f)
     {
         if ( errorHandler ) // sequence of std::function
         {
@@ -80,19 +81,97 @@ private:
     {
         if (errorHandler) errorHandler(e, msg);
     }
+    void Completed(const T& result)
+    {
+        if (afterHandler) afterHandler(result);
+    }
+
+    static ProxyImpl& CreateEmpty()
+    {
+        return *std::make_shared<ProxyImpl>();
+    }
+
+    static ProxyImpl& Command(Method method, std::string request, Client* client, const T& result, std::string body={})
+    {
+        auto proxy = std::make_shared<ProxyImpl>();
+        client->RawCmd(
+            method,
+            std::move(request),
+            [proxy, result](auto e, int state, auto reason, auto)
+            {
+                if (e)
+                    proxy->SetError(Error::network, e.message());
+                else
+                {
+                    if (state/100 == 2)
+                        proxy->Completed(result);
+                    else
+                        proxy->SetError(Error::unknown, reason);
+                }
+            },
+            std::move(body)
+        );
+        return *proxy;
+    }
+
+    ErrorHandler errorHandler;
+    AfterHandler afterHandler;
+};
+
+///////////
+
+template <>
+class ProxyImpl<void>
+{
+public:
+    using ErrorHandler = std::function<void(Error,const std::string&)>;
+    using AfterHandler = std::function<void(void)>;
+
+    ProxyImpl& After(AfterHandler f)
+    {
+        if ( afterHandler ) // sequence of std::function
+        {
+            auto g = afterHandler;
+            afterHandler = [g,f](){ g(); f(); };
+        }
+        else
+            afterHandler = f;
+        return *this;
+    }
+    ProxyImpl& OnError(ErrorHandler f)
+    {
+        if ( errorHandler ) // sequence of std::function
+        {
+            auto g = errorHandler;
+            errorHandler = [g,f](Error e, const std::string& msg){ g(e, msg); f(e, msg); };
+        }
+        else
+            errorHandler = f;
+        return *this;
+    }
+
+private:
+    friend class Channel;
+    friend class Bridge;
+    friend class Recording;
+
+    void SetError(Error e, const std::string& msg)
+    {
+        if (errorHandler) errorHandler(e, msg);
+    }
     void Completed()
     {
         if (afterHandler) afterHandler();
     }
 
-    static Proxy& CreateEmpty()
+    static ProxyImpl& CreateEmpty()
     {
-        return *std::make_shared<Proxy>();
+        return *std::make_shared<ProxyImpl>();
     }
 
-    static Proxy& Command(Method method, std::string request, Client* client, std::string body={})
+    static ProxyImpl& Command(Method method, std::string request, Client* client, std::string body={})
     {
-        auto proxy = std::make_shared<Proxy>();
+        auto proxy = std::make_shared<ProxyImpl>();
         client->RawCmd(
             method,
             std::move(request),
@@ -116,6 +195,10 @@ private:
     ErrorHandler errorHandler;
     AfterHandler afterHandler;
 };
+
+
+using Proxy = ProxyImpl<void>;
+template <typename T> using ProxyPar = ProxyImpl<T>;
 
 } // namespace aricpp
 
