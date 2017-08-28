@@ -17,7 +17,7 @@ Asterisk ARI interface bindings for modern C++
 
 aricpp requires a c++14 compiler, and relies on the following libraries:
 * boost (www.boost.org)
-* beast (http://github.com/boostorg/beast tested with bersion 108)
+* beast (http://github.com/boostorg/beast tested with version 108)
 
 
 ## Installation
