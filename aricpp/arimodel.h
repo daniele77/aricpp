@@ -122,10 +122,12 @@ private:
             [this](const JsonTree& e)
             {
                 auto id = Get<std::string>( e, {"channel", "id"} );
+                auto cause = Get<int>( e, {"cause"} );
+                auto causeTxt = Get<std::string>( e, {"cause_txt"} );
 
                 auto ch = channels.find(id);
                 if ( ch == channels.end() ) return;
-                ch->second->Dead();
+                ch->second->Dead(cause, causeTxt);
                 if (chDestroyed) chDestroyed(ch->second);
                 channels.erase(id);
             }
