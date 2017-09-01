@@ -94,7 +94,7 @@ public:
                 socket.close();
             }
         }
-        catch(const std::exception& e)
+        catch(const std::exception&)
         {
             // nothing to do
         }

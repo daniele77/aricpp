@@ -7,6 +7,7 @@ Asterisk ARI interface bindings for modern C++
 * modern C++
 * multiplatform
 * header only
+* asynchronous
 * high level interface to manipulate asterisk concepts (channels, bridges, ...)
 * low level interface to send and receive ARI commands and events from asterisk
 * fluent interface
