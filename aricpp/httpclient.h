@@ -59,7 +59,7 @@ public:
 
     HttpClient( boost::asio::io_service& _ios, std::string _host, std::string _port, std::string user, std::string password ) :
         ios(_ios), host(std::move(_host)), port(std::move(_port)),
-        auth( std::move(GetBasicAuth( user, password )) ),
+        auth(GetBasicAuth(user, password)),
         resolver(ios),
         socket(ios)
 #ifdef ARICPP_HTTP_TIMEOUT
@@ -223,6 +223,6 @@ private:
 #endif
 };
 
-} // namespace
+} // namespace aricpp
 
 #endif

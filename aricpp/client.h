@@ -156,6 +156,6 @@ private:
     EventHandlers eventHandlers;
 };
 
-} // namespace
+} // namespace aricpp
 
 #endif

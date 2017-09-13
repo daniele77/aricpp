@@ -156,6 +156,6 @@ private:
     StasisStartedHandler stasisStarted;
 };
 
-} // namespace
+} // namespace aricpp
 
 #endif

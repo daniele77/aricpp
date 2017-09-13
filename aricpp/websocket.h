@@ -165,7 +165,7 @@ private:
     ReceiveHandler onReceive;
 };
 
-} // namespace
+} // namespace aricpp
 
 #endif
 

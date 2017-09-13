@@ -48,7 +48,7 @@ You can specify boost and beast library paths in the following ways:
 
 ### GNU Make
     
-    make CXXFLAGS=-I<boost_path> CXXFLAGS="-I<boost_include> -isystem <beast_include>" LDFLAGS=-L<boost_lib>
+    make CXXFLAGS="-I<boost_include> -isystem <beast_include>" LDFLAGS=-L<boost_lib>
 
 example:
 
@@ -114,8 +114,7 @@ client.Connect( [&](boost::system::error_code e){
     cout << "Connected" << '\n';
     client.OnEvent("StasisStart", [](const Event& e){
         Dump(e); // print the json on the console
-        // Event is a boost::property_tree::ptree, so you can retrieve data using:
-        auto id = e.get<string>("channel.id");
+        auto id = Get<string>(e, {"channel", "id"});
         cout << "Channel id " << id << " entered stasis application\n";
     });
 });
@@ -134,15 +133,15 @@ client.RawCmd(
 );
 ```
 
-aricpp also provides an higher level interface, with which you can manipulate
+aricpp also provides a higher level interface, with which you can manipulate
 asterisk telephonic objects (e.g., channels).
 
-To use this interface, you need to create an istance of the class `AriModel`,
+To use this interface, you need to create an instance of the class `AriModel`,
 on which you can register for channel events (`AriModel::OnStasisStarted`, 
 `AriModel::OnStasisDestroyed`, `AriModel::OnChannelStateChanged`) and
 create channels (`AriModel::CreateChannel()`).
 
-All these methods gives you references to `Channel` objects, that provide the methods
+All these methods give you references to `Channel` objects, that provide the methods
 for the usual actions on asterisk channels (e.g., ring, answer, hangup, dial, ...).
 
 ```C++
@@ -169,7 +168,7 @@ client.Connect( [&](boost::system::error_code e){
         );
 		
         auto ch = channels.CreateChannel();
-        ch->Call("sip/100", stasisapp, "caller name")
+        ch->Call("pjsip/100", stasisapp, "caller name")
             .OnError([callingCh](Error e, const string& msg)
                 {
                     if (e == Error::network)
@@ -190,6 +189,6 @@ ios.run();
 See the sample `high_level_dial.cpp` (located in directory `samples`) to have a
 full working example.
 
-The high and low level interface can coexist. Being the high level interface still
-under development, you can use the low level interface for the missing commands.
+The high and low level interface can coexist. Being the high-level interface still
+under development, you can use the low-level interface for the missing commands.
 

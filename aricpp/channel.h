@@ -284,7 +284,7 @@ public:
     /// Returns true if the asterisk channel has been destroyed.
     /// You can call Channel::Cause() to retrieve the Q.850 cause code.
     /// When a channel does not exist on asterisk anymore, the aricpp library
-    /// don't own anymore a reference to the aricpp::Channel, so the object
+    /// doesn't own anymore a reference to the aricpp::Channel, so the object
     /// will be destroyed when the clients run out of references to it.
     bool IsDead() const { return dead; }
 
@@ -401,6 +401,6 @@ template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::bo
 template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::in{"in"};
 template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::out{"out"};
 
-} // namespace
+} // namespace aricpp
 
 #endif
