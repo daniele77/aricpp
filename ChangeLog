@@ -1,5 +1,12 @@
 <date>: <Version>
 
+2017-10-20: Version 0.1.0
+
+    * Use beast library v. 123
+    * Add CONTRIBUTING and CODE_OF_CONDUCT files
+    * Add channel destruction Q.850 cause
+    * Remove std::move when prevents RVO
+
 2017-08-28: Version 0.0.3
 
     * Use boost version of beast library
