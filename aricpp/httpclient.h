@@ -153,19 +153,25 @@ private:
         // clear the request (beast does not provide a method to clear a request?!)
         boost::beast::http::request<boost::beast::http::string_body>{}.swap(request);
 
-        request.version = 11;
+        request.version(11);
         request.method(ToBeast(method));
         request.target(url);
         request.set( boost::beast::http::field::host, host + ":" + port );
         request.set( boost::beast::http::field::authorization, auth );
         request.set( boost::beast::http::field::user_agent, "aricpp" );
         request.set( boost::beast::http::field::content_type, "application/json" );
-        request.body = body;
+        request.body() = body;
 	    request.prepare_payload();
-        boost::beast::http::async_write( socket, request, [this](boost::system::error_code e){
-            if ( e ) CallBack( e );
-            else ReadResponse(); // no error, go on with read
-        });
+        boost::beast::http::async_write( 
+            socket,
+            request, 
+            [this](boost::system::error_code e, std::size_t bytes_transferred)
+            {
+                boost::ignore_unused(bytes_transferred);
+                if ( e ) CallBack( e );
+                else ReadResponse(); // no error, go on with read
+            }
+        );
     }
 
     void ReadResponse()
@@ -182,27 +188,34 @@ private:
             }
         );
 #endif
-        boost::beast::http::async_read(socket, buffer, resp, [this](boost::system::error_code e){
+        boost::beast::http::async_read(
+            socket,
+            buffer,
+            resp,
+            [this](boost::system::error_code e, std::size_t bytes_transferred)
+            {
+                boost::ignore_unused(bytes_transferred);
 #ifdef ARICPP_HTTP_TIMEOUT
                 timer.cancel();
 #endif
-            if ( e )
-                CallBack( e );
-            else
-            {
-#ifdef ARICPP_TRACE_HTTP
-                std::cout << "### <= " << resp.result() << " " << resp.reason() << '\n';
-                if ( !resp.body.empty() )
-                    std::cout << "       " << resp.body << '\n';
-#endif
-                CallBack( e, resp.result(), resp.reason().to_string(), resp.body );
-            }
+                if ( e )
+                    CallBack( e );
+                else
+                {
+    #ifdef ARICPP_TRACE_HTTP
+                    std::cout << "### <= " << resp.result() << " " << resp.reason() << '\n';
+                    if ( !resp.body.empty() )
+                        std::cout << "       " << resp.body << '\n';
+    #endif
+                    CallBack( e, resp.result(), resp.reason().to_string(), resp.body() );
+                }
 
-            // in any case, clear the buffer and the response
-            buffer.consume(buffer.size());
-            boost::beast::http::response<boost::beast::http::string_body> emptyResp;
-            boost::beast::http::swap(resp, emptyResp);
-        });
+                // in any case, clear the buffer and the response
+                buffer.consume(buffer.size());
+                boost::beast::http::response<boost::beast::http::string_body> emptyResp;
+                boost::beast::http::swap(resp, emptyResp);
+            }
+        );
     }
 
     boost::asio::io_service& ios;

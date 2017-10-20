@@ -18,7 +18,7 @@ Asterisk ARI interface bindings for modern C++
 
 aricpp requires a c++14 compiler, and relies on the following libraries:
 * boost (www.boost.org)
-* beast (http://github.com/boostorg/beast tested with version 108)
+* beast (http://github.com/boostorg/beast tested with version 123 - commit 885b9df)
 
 
 ## Installation
@@ -29,7 +29,7 @@ library binaries or special treatment when linking.
  
 Extract the archive wherever you want.
 
-Now you must only remember to insert the aricpp, beast and boost path when
+Now you must only remember to specify the aricpp, beast and boost paths when
 compiling your source code.
 
 
@@ -113,7 +113,7 @@ client.Connect( [&](boost::system::error_code e){
         return;
     }
     cout << "Connected" << '\n';
-    client.OnEvent("StasisStart", [](const Event& e){
+    client.OnEvent("StasisStart", [](const JsonTree& e){
         Dump(e); // print the json on the console
         auto id = Get<string>(e, {"channel", "id"});
         cout << "Channel id " << id << " entered stasis application\n";
@@ -146,31 +146,35 @@ All these methods give you references to `Channel` objects, that provide the met
 for the usual actions on asterisk channels (e.g., ring, answer, hangup, dial, ...).
 
 ```C++
+#include "aricpp/arimodel.h"
+
+...
+
 boost::asio::io_service ios;
 aricpp::Client client(ios, host, port, username, password, stasisapp);
 AriModel channels( client );
 
 client.Connect( [&](boost::system::error_code e){
-	if (e)
-	{
-		cerr << "Connection error: " << e.message() << endl;
-		ios.stop();
-	}
-	else
-	{
-		cout << "Connected" << endl;
-		
-		channels.OnStasisStarted(
-            [this](shared_ptr<Channel> ch, bool external)
+    if (e)
+    {
+        cerr << "Connection error: " << e.message() << endl;
+        ios.stop();
+    }
+    else
+    {
+        cout << "Connected" << endl;
+
+        channels.OnStasisStarted(
+            [](shared_ptr<Channel> ch, bool external)
             {
                 if (external) CallingChannel(ch);
                 else CalledChannel(ch);
             }
         );
-		
+
         auto ch = channels.CreateChannel();
         ch->Call("pjsip/100", stasisapp, "caller name")
-            .OnError([callingCh](Error e, const string& msg)
+            .OnError([](Error e, const string& msg)
                 {
                     if (e == Error::network)
                         cerr << "Error creating channel: " << msg << '\n';
@@ -181,7 +185,7 @@ client.Connect( [&](boost::system::error_code e){
                 }
             )
             .After([]() { cout << "Call ok\n"; } );
-	}
+    }
 });
 ...
 ios.run();
@@ -193,3 +197,25 @@ full working example.
 The high and low level interface can coexist. Being the high-level interface still
 under development, you can use the low-level interface for the missing commands.
 
+## License
+
+Distributed under the Boost Software License, Version 1.0.
+(See accompanying file [LICENSE.txt](LICENSE.txt) or copy at
+http://www.boost.org/LICENSE_1_0.txt)
+
+## Contact
+
+Please report issues or questions here:
+https://github.com/daniele77/aricpp/issues
+
+---
+
+## Contributing (We Need Your Help!)
+
+Any feedback from users and stakeholders, even simple questions about
+how things work or why they were done a certain way, carries value
+and can be used to improve the library.
+
+Even if you just have questions, asking them in issues provides valuable
+information that can be used to improve the library - do not hesitate,
+no question is insignificant or unimportant!
