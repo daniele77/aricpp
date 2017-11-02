@@ -161,6 +161,10 @@ private:
         string callerName = callingCh->CallerName();
         if (callerName.empty()) callerName = callerNum;
 
+        callingCh->GetVar("CALLERID(all)")
+        .OnError([](Error, const string& msg) { cerr << "Error retrieving variable CALLERID: " << msg << endl; } )
+        .After([](auto var){ cout << "CALLERID variable = " << var << endl; } );
+        
         auto calledCh = channels.CreateChannel();
         Create(callingCh, calledCh);
         calledCh->Call(chPrefix+ext, application, callerName, inviteVariables)

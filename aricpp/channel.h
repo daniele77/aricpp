@@ -183,7 +183,7 @@ public:
         const std::string& callerId,
         std::string variables={}
     ) const
-    {        
+    {
         if (!variables.empty()) variables = "{\"variables\":"+variables+"}";
         return Proxy::Command(
             Method::post,
@@ -265,6 +265,14 @@ public:
         return Proxy::Command(Method::post, std::move(query), client);
     }
 
+    ProxyPar<std::string>& GetVar(const std::string& var) const
+    {
+        std::string result;
+        std::string query = "/ari/channels/"+id+"/variable";
+        std::string body = "{\"variable\":\""+var+"\"}";
+        return ProxyPar<std::string>::Command(Method::get, std::move(query), client, std::move(body));
+    }
+
     Proxy& Snoop(const std::string& app, Direction spy=Direction::none, Direction whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
     {
         return Proxy::Command(
@@ -290,10 +298,10 @@ public:
 
     /*! Returns the channel destroy cause as codified in Q.850
         see e.g., page http://support.sonus.net/display/uxapidoc/q.850+cause+codes+-+reference
-    
+
         These are the current codes, based on the Q.850/Q.931
         specification:
-  
+
         - AST_CAUSE_UNALLOCATED                      1
         - AST_CAUSE_NO_ROUTE_TRANSIT_NET             2
         - AST_CAUSE_NO_ROUTE_DESTINATION             3
@@ -380,7 +388,7 @@ private:
         else state = State::unknown;
     }
     void Dead(int _cause, const std::string& /*causeTxt*/)
-    { 
+    {
         dead=true;
         cause=_cause;
     }
