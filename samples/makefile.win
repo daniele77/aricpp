@@ -31,8 +31,8 @@
 ################################################################################
 
 #define macros
-EXE_NAMES = high_level_dial.exe low_level_dial.exe chat.exe query.exe
-DIR_INCLUDE = /I..\.. /I%BOOST% /I%BEAST%\include
+EXE_NAMES = high_level_dial.exe low_level_dial.exe chat.exe query.exe holding_bridge.exe
+DIR_INCLUDE = /I..\.. /I%BOOST%
 DIR_LINK = %BOOST%\stage\lib
 COMPILE_FLAGS = /nologo /MD /EHsc /D_WIN32_WINNT=0x0501
 CPPFLAGS = $(COMPILE_FLAGS) $(DIR_INCLUDE) /link /LIBPATH:$(DIR_LINK)

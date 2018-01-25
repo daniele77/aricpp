@@ -1,6 +1,10 @@
 <date>: <Version>
 
+    * Use boost library v. 1.66.0 or later (does not need separate beast library anymore)
     * Add GetVar in Channel
+    * Hangup on Channel destructor
+    * Add holding Bridge type
+    * Add holding_bridge sample
 
 2017-10-20: Version 0.1.0
 

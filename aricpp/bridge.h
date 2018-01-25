@@ -58,8 +58,8 @@ public:
     template<class Dummy>
     struct RoleBase
     {
-        static const Role announce;
-        static const Role partecipant;
+        static const Role announcer;
+        static const Role participant;
     };
 
     class Role : public RoleBase<void>
@@ -69,6 +69,30 @@ public:
     private:
         friend struct RoleBase<void>;
         Role(const char* v) : value(v) {}
+        const std::string value;
+    };
+
+    ///////////////////////////////////////////////////////////////
+    // Type smart enum
+
+    // all this machinery to initialize static members in the header file
+
+    class Type; // forward declaration
+
+    template<class Dummy>
+    struct TypeBase
+    {
+        static const Type mixing;
+        static const Type holding;
+    };
+
+    class Type : public TypeBase<void>
+    {
+    public:
+        operator std::string() const { return value; }
+    private:
+        friend struct TypeBase<void>;
+        Type(const char* v) : value(v) {}
         const std::string value;
     };
 
@@ -93,11 +117,11 @@ public:
 
     /// Create a new bridge on asterisk
     template<typename CreationHandler>
-    Bridge(Client& _client, CreationHandler&& h) : client(&_client)
+    Bridge(Client& _client, CreationHandler&& h, Type type=Type::mixing) : client(&_client)
     {
         client->RawCmd(
             Method::post,
-            "/ari/bridges?type=mixing",
+            "/ari/bridges?type=" + static_cast<std::string>(type),
             [ this, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
             {
                 try
@@ -122,7 +146,7 @@ public:
         );
     }
 
-    Proxy& Add(const Channel& ch, Role role=Role::partecipant)
+    Proxy& Add(const Channel& ch, Role role=Role::participant)
     {
         return Proxy::Command(
             Method::post,
@@ -217,8 +241,11 @@ private:
     Client* client;
 };
 
-template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::announce{"announce"};
-template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::partecipant{"partecipant"};
+template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::announcer{"announcer"};
+template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::participant{"participant"};
+
+template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::mixing{"mixing"};
+template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::holding{"holding"};
 
 } // namespace aricpp
 

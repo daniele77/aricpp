@@ -1,6 +1,6 @@
 # aricpp
-Asterisk ARI interface bindings for modern C++
 
+Asterisk ARI interface bindings for modern C++
 
 ## Properties
 
@@ -13,61 +13,56 @@ Asterisk ARI interface bindings for modern C++
 * fluent interface
 * efficient (tested with sipp traffic generator)
 
-
 ## Requirements
 
-aricpp requires a c++14 compiler, and relies on the following libraries:
-* boost (www.boost.org)
-* beast (http://github.com/boostorg/beast tested with version 123 - commit 885b9df)
-
+aricpp requires a c++14 compiler, and relies on the boost libraries (v. 1.66.0 or later).
 
 ## Installation
 
 aricpp library is header-only: it consists entirely of header files
 containing templates and inline functions, and require no separately-compiled
 library binaries or special treatment when linking.
- 
+
 Extract the archive wherever you want.
 
 Now you must only remember to specify the aricpp, beast and boost paths when
 compiling your source code.
 
-
 ## Compilation of the samples
 
 You can find some examples in the directory "samples".
-Each .cpp files correspond to an executable. You can compile each sample by including
-aricpp, boost and beast header files and linking boost system, boost program options
+Each .cpp file corresponds to an executable. You can compile each sample by including
+aricpp and boost header files and linking boost system, boost program options
 (and pthread on linux).
 
-Are also provided:
+In the directory samples you can also find:
+
 * a GNU make file (Makefile)
 * a Windows nmake file (makefile.win)
 * a Visual Studio solution
 
-You can specify boost and beast library paths in the following ways:
+You can specify boost library path in the following ways:
 
 ### GNU Make
-    
-    make CXXFLAGS="-I<boost_include> -isystem <beast_include>" LDFLAGS=-L<boost_lib>
+
+    make CXXFLAGS="-isystem <boost_include> LDFLAGS=-L<boost_lib>
 
 example:
 
-    make CXXFLAGS="-I/opt/boost_1_63_0/install/x86/include -isystem /opt/beast/include/" LDFLAGS=-L/opt/boost_1_63_0/install/x86/lib
+    make CXXFLAGS="-isystem /opt/boost_1_66_0/install/x86/include LDFLAGS=-L/opt/boost_1_66_0/install/x86/lib
 
-(if you want to use clang instead of gcc, you can set the variable CXX=clang++) 
- 
+(if you want to use clang instead of gcc, you can set the variable CXX=clang++)
+
 ### Windows nmake
 
-Set the environment variables BOOST and BEAST. Then, from a visual studio console, use the command:
+Set the environment variable BOOST. Then, from a visual studio console, use the command:
 
     nmake /f makefile.win
-	
+
 ### Visual Studio solution
 
-Set the environment variables BOOST and BEAST. Then, open the file
+Set the environment variable BOOST. Then, open the file
 `aricpp/samples/aricpp_samples/aricpp_samples.sln`
-
 
 ## Compilation of the Doxygen documentation
 
@@ -76,7 +71,6 @@ of the library in this way:
 
     <enter the directory doc>
     doxygen Doxyfile
-    
 
 ## Five minutes tutorial
 
@@ -138,7 +132,7 @@ aricpp also provides a higher level interface, with which you can manipulate
 asterisk telephonic objects (e.g., channels).
 
 To use this interface, you need to create an instance of the class `AriModel`,
-on which you can register for channel events (`AriModel::OnStasisStarted`, 
+on which you can register for channel events (`AriModel::OnStasisStarted`,
 `AriModel::OnStasisDestroyed`, `AriModel::OnChannelStateChanged`) and
 create channels (`AriModel::CreateChannel()`).
 
@@ -201,12 +195,12 @@ under development, you can use the low-level interface for the missing commands.
 
 Distributed under the Boost Software License, Version 1.0.
 (See accompanying file [LICENSE.txt](LICENSE.txt) or copy at
-http://www.boost.org/LICENSE_1_0.txt)
+<http://www.boost.org/LICENSE_1_0.txt>)
 
 ## Contact
 
 Please report issues or questions here:
-https://github.com/daniele77/aricpp/issues
+<https://github.com/daniele77/aricpp/issues>
 
 ---
 

@@ -11,7 +11,7 @@ to give Aricpp a star! Your stars create generate additional visibility,
 which leads to more users, more bug reports, more fixes, more testing,
 more features, and a better product!
 
-# Ways to Contribute
+## Ways to Contribute
 
 No contribution to Aricpp is too big or too small! We are
 always happy to see user participation in all of its forms.
