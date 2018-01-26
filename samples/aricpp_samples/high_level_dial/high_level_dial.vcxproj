@@ -82,7 +82,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(BOOST)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_WIN32_WINNT=0x0600;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_WIN32_WINNT=0x0600;_SCL_SECURE_NO_WARNINGS;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE</PreprocessorDefinitions>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
@@ -105,7 +105,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(BOOST)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_WIN32_WINNT=0x0600;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_WIN32_WINNT=0x0600;_SCL_SECURE_NO_WARNINGS;BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE</PreprocessorDefinitions>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
