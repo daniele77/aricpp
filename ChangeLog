@@ -1,4 +1,4 @@
-<date>: <Version>
+2018-01-26: Version 0.2.0
 
     * Use boost library v. 1.66.0 or later (does not need separate beast library anymore)
     * Add GetVar in Channel

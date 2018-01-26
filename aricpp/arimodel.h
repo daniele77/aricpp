@@ -44,6 +44,12 @@
 namespace aricpp
 {
 
+/**
+ * @brief Provides the telephony object model on top of a asterisk connection.
+ * 
+ * This class provides methods to create channels (class Channel) and
+ * register handlers for stasis and channel events.
+ */
 class AriModel
 {
 public:

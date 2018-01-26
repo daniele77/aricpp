@@ -47,6 +47,14 @@
 namespace aricpp
 {
 
+/**
+ * @brief Client of a ARI connection.
+ * 
+ * This class can connect to the ARI interface of a asterisk box,
+ * and can be used to send and receive raw messages to it.
+ * You can use a high-level interface by instantiating an object
+ * of class AriModel that use the Client object.
+ */
 class Client
 {
 public:
