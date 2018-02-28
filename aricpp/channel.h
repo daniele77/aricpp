@@ -39,6 +39,7 @@
 #include "proxy.h"
 #include "terminationdtmf.h"
 #include "recording.h"
+#include "urlencode.h"
 
 namespace aricpp
 {
@@ -192,10 +193,10 @@ public:
         return Proxy::Command(
             Method::post,
             "/ari/channels?"
-            "endpoint=" + endpoint +
-            "&app=" + application +
-            "&channelId=" + id +
-            "&callerId=" + callerId +
+            "endpoint=" + UrlEncode(endpoint) +
+            "&app=" + UrlEncode(application) +
+            "&channelId=" + UrlEncode(id) +
+            "&callerId=" + UrlEncode(callerId) +
             "&timeout=-1"
             "&appArgs=internal",
             client,
@@ -208,7 +209,7 @@ public:
         return Proxy::Command(
             Method::post,
             "/ari/channels/"+id+"/redirect?"
-            "endpoint=" + endpoint,
+            "endpoint=" + UrlEncode(endpoint),
             client
         );
     }
@@ -218,7 +219,7 @@ public:
         return Proxy::Command(
             Method::post,
             "/ari/channels/"+id+"/dtmf?"
-            "dtmf=" + dtmf +
+            "dtmf=" + UrlEncode(dtmf) +
             ( between < 0 ? "" : "&between=" + std::to_string(between) ) +
             ( duration < 0 ? "" : "&duration=" + std::to_string(duration) ) +
             ( before < 0 ? "" : "&before=" + std::to_string(before) ) +
@@ -233,7 +234,7 @@ public:
         return Proxy::Command(
             Method::post,
             "/ari/channels/"+id+"/play?"
-            "media=" + media +
+            "media=" + UrlEncode(media) +
             ( lang.empty() ? "" : "&lang=" + lang ) +
             ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
             ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
@@ -250,7 +251,7 @@ public:
         return ProxyPar<Recording>::Command(
             Method::post,
             "/ari/channels/"+id+"/record?"
-            "name=" + name +
+            "name=" + UrlEncode(name) +
             "&format=" + format +
             "&terminateOn=" + static_cast<std::string>(terminateOn) +
             ( beep ? "&beep=true" : "&beep=false" ) +
@@ -264,8 +265,8 @@ public:
 
     Proxy& SetVar(const std::string& var, const std::string& value={}) const
     {
-        std::string query = "/ari/channels/"+id+"/variable?variable=" + var;
-        if (!value.empty()) query += "&value=" + value;
+        std::string query = "/ari/channels/"+id+"/variable?variable=" + UrlEncode(var);
+        if (!value.empty()) query += "&value=" + UrlEncode(value);
         return Proxy::Command(Method::post, std::move(query), client);
     }
 

@@ -42,7 +42,7 @@
 namespace aricpp
 {
 
-std::string UrlEncode(const std::string& value)
+inline std::string UrlEncode(const std::string& value)
 {
     using namespace std;
 

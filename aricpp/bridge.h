@@ -40,6 +40,7 @@
 #include "terminationdtmf.h"
 #include "method.h"
 #include "recording.h"
+#include "urlencode.h"
 
 namespace aricpp
 {
@@ -194,7 +195,7 @@ public:
         return Proxy::Command(
             Method::post,
             "/ari/bridges/"+id+"/play?"
-            "media=" + media +
+            "media=" + UrlEncode(media) +
             ( lang.empty() ? "" : "&lang=" + lang ) +
             ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
             ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
@@ -211,7 +212,7 @@ public:
         return ProxyPar<Recording>::Command(
             Method::post,
             "/ari/bridges/"+id+"/record?"
-            "name=" + name +
+            "name=" + UrlEncode(name) +
             "&format=" + format +
             "&terminateOn=" + static_cast<std::string>(terminateOn) +
             ( beep ? "&beep=true" : "&beep=false" ) +
