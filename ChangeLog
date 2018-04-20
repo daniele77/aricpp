@@ -1,3 +1,7 @@
+2018-04-20: Version 0.4.1
+
+    * Fix bug in Channel::GetVar
+
 2018-04-20: Version 0.4.0
 
     * Add creation only of a asterisk channel (w/o dial)

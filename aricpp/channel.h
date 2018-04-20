@@ -317,9 +317,9 @@ public:
 
     ProxyPar<std::string>& GetVar(const std::string& var) const
     {
-        const std::string query = "/ari/channels/" + id + "/variable?";
-                                  "variable=" + UrlEncode(var);
-        return ProxyPar<std::string>::Command(Method::get, std::move(query), client);
+        const std::string query = "/ari/channels/"+id+"/variable";
+        const std::string body = "{\"variable\":\""+var+"\"}";
+        return ProxyPar<std::string>::Command(Method::get, std::move(query), client, std::move(body));
     }
 
     Proxy& Snoop(const std::string& app, Direction spy=Direction::none, Direction whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
