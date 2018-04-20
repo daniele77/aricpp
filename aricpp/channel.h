@@ -44,7 +44,6 @@
 namespace aricpp
 {
 
-
 class Channel
 {
 public:
@@ -182,6 +181,17 @@ public:
         return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
 
+    /**
+     * @brief Create an asterisk channel and dial
+     *
+     * @param endpoint Endpoint to call (e.g., pjsip/100)
+     * @param application The stasis application that is subscribed to the originated channel.
+     *                    When the channel is answered, it will be passed to this Stasis application.
+     * @param callerId CallerID to use for the call
+     * @param variables Holds variable key/value pairs to set on the channel on creation
+                        (e.g., {"CALLERID(name)":"Alice", "VAR2":"Value"} )
+     * @return Proxy& You can call After() and OnError() on the returned object
+     */
     Proxy& Call(
         const std::string& endpoint,
         const std::string& application,
@@ -201,6 +211,40 @@ public:
             "&appArgs=internal",
             client,
             std::move(variables) // now http body :-)
+        );
+    }
+
+    /**
+     * @brief Create only an asterisk channel (once created, you can dial with Channel::Dial)
+     *
+     * @param endpoint Endpoint to call (e.g., pjsip/100)
+     * @param application The stasis application that is subscribed to the originated channel.
+     *                    When the channel is answered, it will be passed to this Stasis application.
+     */
+    Proxy& Create(const std::string& endpoint, const std::string& application) const
+    {
+        return Proxy::Command(
+            Method::post,
+            "/ari/channels/create?"
+            "endpoint=" + UrlEncode(endpoint) +
+            "&app=" + UrlEncode(application) +
+            "&channelId=" + UrlEncode(id) +
+            "&appArgs=internal",
+            client
+        );
+    }
+
+    /**
+     * @brief Dial an asterisk channel previously created with Channel::Create
+     *
+     * @return Proxy& You can call After() and OnError() on the returned object
+     */
+    Proxy& Dial() const
+    {
+        return Proxy::Command(
+            Method::post,
+            "/ari/channels/" + id + "/dial",
+            client
         );
     }
 
@@ -265,17 +309,17 @@ public:
 
     Proxy& SetVar(const std::string& var, const std::string& value={}) const
     {
-        std::string query = "/ari/channels/"+id+"/variable?variable=" + UrlEncode(var);
+        std::string query = "/ari/channels/" + id + "/variable?"
+                                  "variable=" + UrlEncode(var);
         if (!value.empty()) query += "&value=" + UrlEncode(value);
         return Proxy::Command(Method::post, std::move(query), client);
     }
 
     ProxyPar<std::string>& GetVar(const std::string& var) const
     {
-        std::string result;
-        std::string query = "/ari/channels/"+id+"/variable";
-        std::string body = "{\"variable\":\""+var+"\"}";
-        return ProxyPar<std::string>::Command(Method::get, std::move(query), client, std::move(body));
+        const std::string query = "/ari/channels/" + id + "/variable?";
+                                  "variable=" + UrlEncode(var);
+        return ProxyPar<std::string>::Command(Method::get, std::move(query), client);
     }
 
     Proxy& Snoop(const std::string& app, Direction spy=Direction::none, Direction whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
@@ -413,6 +457,28 @@ template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::no
 template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::both{"both"};
 template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::in{"in"};
 template<class Dummy> const Channel::Direction Channel::DirectionBase<Dummy>::out{"out"};
+
+
+/// Converts the Channel State enum class to a string
+inline std::string ToString(Channel::State s)
+{
+    static const char* d[] =
+    {
+        "down",
+        "reserved",
+        "offhook",
+        "dialing",
+        "ring",
+        "ringing",
+        "up",
+        "busy",
+        "dialingoffhook",
+        "prering",
+        "mute",
+        "unknown"
+    };
+    return d[ static_cast<std::underlying_type_t<Channel::State>>(s) ];
+}
 
 } // namespace aricpp
 

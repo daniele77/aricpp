@@ -64,7 +64,7 @@ public:
     AriModel& operator=(const AriModel&&) = delete;
 
     using ChHandler = std::function<void(ChannelPtr)>;
-    using StasisStartedHandler = std::function<void(ChannelPtr, bool)>;
+    using StasisStartedHandler = std::function<void(ChannelPtr, bool external)>;
 
     void OnChannelCreated(ChHandler handler) { chCreated = handler; }
     void OnChannelDestroyed(ChHandler handler) { chDestroyed = handler; }

@@ -1,3 +1,10 @@
+<date>: Version 0.4.0
+
+    * Add creation only of a asterisk channel (w/o dial)
+    * Add dial of a asterisk channel
+    * Add Channel State ToString function
+    * Use url parameter instead of http body for channel Get variable
+
 2018-02-28: Version 0.3.0
 
     * URL encode in ARI http messages
