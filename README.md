@@ -45,11 +45,11 @@ You can specify boost library path in the following ways:
 
 ### GNU Make
 
-    make CXXFLAGS="-isystem <boost_include> LDFLAGS=-L<boost_lib>
+    make CXXFLAGS="-isystem <boost_include>" LDFLAGS="-L<boost_lib>"
 
 example:
 
-    make CXXFLAGS="-isystem /opt/boost_1_66_0/install/x86/include LDFLAGS=-L/opt/boost_1_66_0/install/x86/lib
+    make CXXFLAGS="-isystem /opt/boost_1_66_0/install/x86/include" LDFLAGS="-L/opt/boost_1_66_0/install/x86/lib"
 
 (if you want to use clang instead of gcc, you can set the variable CXX=clang++)
 
