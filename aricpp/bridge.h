@@ -126,6 +126,7 @@ public:
     ~Bridge() { Destroy(); }
 
     /// Create a new bridge on asterisk
+    /// The handler takes a unique_ptr<Bridge> to the new bridge as parameter
     template<typename CreationHandler>
     static void Create(Client& _client, CreationHandler&& h, Type type=Type::mixing)
     {
