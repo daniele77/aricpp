@@ -85,15 +85,24 @@ public:
     {
         static const Type mixing;
         static const Type holding;
+        static const Type dtmf_events;
+        static const Type proxy_media;
+        static const Type video_sfu;
     };
 
     class Type : public TypeBase<void>
     {
     public:
         operator std::string() const { return value; }
+        Type operator | (Type rhs) const
+        {
+            Type result(value + ',' + static_cast<std::string>(rhs));
+            return result;
+        }
     private:
         friend struct TypeBase<void>;
         Type(const char* v) : value(v) {}
+        Type(const std::string& v) : value(v) {}
         const std::string value;
     };
 
@@ -118,20 +127,32 @@ public:
 
     /// Create a new bridge on asterisk
     template<typename CreationHandler>
-    Bridge(Client& _client, CreationHandler&& h, Type type=Type::mixing) : client(&_client)
+    static void Create(Client& _client, CreationHandler&& h, Type type=Type::mixing)
     {
-        client->RawCmd(
+        _client.RawCmd(
             Method::post,
             "/ari/bridges?type=" + static_cast<std::string>(type),
-            [ this, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
+            [ &_client, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
             {
                 try
                 {
                     auto tree = FromJson(body);
-                    id = Get<std::string>(tree, {"id"});
-                    technology = Get<std::string>(tree, {"technology"});
-                    bridge_type = Get<std::string>(tree, {"bridge_type"});
-                    h();
+                    /*
+                    auto bridge = std::make_unique<Bridge>(
+                        Get<std::string>(tree, {"id"}),
+                        Get<std::string>(tree, {"technology"}),
+                        Get<std::string>(tree, {"bridge_type"}),
+                        &_client
+                    );
+                    h(std::move(bridge));
+                    */
+                    Bridge* bridge = new Bridge(
+                        Get<std::string>(tree, {"id"}),
+                        Get<std::string>(tree, {"technology"}),
+                        Get<std::string>(tree, {"bridge_type"}),
+                        &_client
+                    );
+                    h(std::unique_ptr<Bridge>(bridge));
                 }
                 catch (const std::exception& e)
                 {
@@ -235,6 +256,9 @@ public:
     bool IsDead() const { return id.empty(); }
 
 private:
+    Bridge(const std::string& _id, const std::string& _technology, const std::string& _bridge_type, Client* _client) :
+        id(_id), technology(_technology), bridge_type(_bridge_type), client(_client)
+    {}
 
     std::string id;
     std::string technology;
@@ -247,6 +271,9 @@ template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::participant{"p
 
 template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::mixing{"mixing"};
 template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::holding{"holding"};
+template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::dtmf_events{"dtmf_events"};
+template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::proxy_media{"proxy_media"};
+template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::video_sfu{"video_sfu"};
 
 } // namespace aricpp
 

@@ -106,10 +106,19 @@ int main( int argc, char* argv[] )
         vector<shared_ptr<Channel>> channels;
 
         Client client( ios, host, port, username, password, application );
-        auto bridge = make_shared<Bridge>(client, [](){ cout << "Bridge created" << endl; }, Bridge::Type::holding);
+        shared_ptr<Bridge> bridge;
+        Bridge::Create(
+            client,
+            [&bridge](unique_ptr<Bridge> newBridge)
+            { 
+                bridge = move(newBridge);
+                cout << "Bridge created" << endl;
+            },
+            Bridge::Type::holding
+        );
         AriModel model( client );
         model.OnStasisStarted(
-            [&channels, bridge](shared_ptr<Channel> ch, bool external)
+            [&channels, &bridge](shared_ptr<Channel> ch, bool external)
             {
                 if (external)
                 {

@@ -25,7 +25,7 @@ library binaries or special treatment when linking.
 
 Extract the archive wherever you want.
 
-Now you must only remember to specify the aricpp, beast and boost paths when
+Now you must only remember to specify the aricpp and boost paths when
 compiling your source code.
 
 ## Compilation of the samples

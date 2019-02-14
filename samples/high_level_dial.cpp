@@ -72,9 +72,14 @@ public:
 
     void DialingChUp()
     {
-        bridge = make_unique<Bridge>(
+        Bridge::Create(
             *client,
-            [this](){ bridge->Add( {&*calling, &*called} ); });
+            [this](unique_ptr<Bridge> newBridge)
+            { 
+                bridge = move(newBridge);
+                bridge->Add( {&*calling, &*called} ); 
+            }
+        );
     }
 
     bool ChHangup(shared_ptr<Channel> hung)
