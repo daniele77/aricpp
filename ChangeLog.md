@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Version 0.5.0 - 2019-02-14
 
 - Now the bridge can only be instantiated by a static factory method (to avoid a race in the callback)
 - Add dtmf_events, proxy_media and video_sfu to bridge creation types
