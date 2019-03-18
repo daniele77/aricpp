@@ -245,6 +245,7 @@ private:
     friend class Channel;
     friend class Bridge;
     friend class Recording;
+    friend class Playback;
 
     void SetError(Error e, const std::string& msg)
     {

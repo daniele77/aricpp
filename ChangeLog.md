@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.6.0 - <DATE>
+
+- The bridge creation is now delegated to the AriModel class (for uniformity with Channel)
+- Complete management of playbacks
+
 ## Version 0.5.0 - 2019-02-14
 
 - Now the bridge can only be instantiated by a static factory method (to avoid a race in the callback)

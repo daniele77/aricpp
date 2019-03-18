@@ -39,6 +39,7 @@
 #include "proxy.h"
 #include "terminationdtmf.h"
 #include "recording.h"
+#include "playback.h"
 #include "urlencode.h"
 
 namespace aricpp
@@ -272,18 +273,21 @@ public:
         );
     }
 
-    Proxy& Play(const std::string& media, const std::string& lang={},
+    ProxyPar<Playback>& Play(const std::string& media, const std::string& lang={},
                 const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
     {
-        return Proxy::Command(
+        Playback playback(name, client);
+        return ProxyPar<Playback>::Command(
             Method::post,
             "/ari/channels/"+id+"/play?"
             "media=" + UrlEncode(media) +
+            "&playbackId=" + playback.Id() +
             ( lang.empty() ? "" : "&lang=" + lang ) +
             ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
             ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
             ( skipms < 0 ? "" : "&skipms=" + std::to_string(skipms) ),
-            client
+            client,
+            playback
         );
     }
 

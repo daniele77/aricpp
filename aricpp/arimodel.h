@@ -40,6 +40,7 @@
 #include <unordered_map>
 #include "client.h"
 #include "channel.h"
+#include "bridge.h"
 
 namespace aricpp
 {
@@ -78,6 +79,51 @@ public:
         auto it = channels.emplace(id, std::make_shared<Channel>(client, id));
         return it.first->second;
     }
+
+    /// Create a new bridge on asterisk
+    /// The handler takes a unique_ptr<Bridge> to the new bridge as parameter
+    template<typename CreationHandler>
+    void CreateBridge(CreationHandler&& h, Bridge::Type type=Bridge::Type::mixing)
+    {
+        client.RawCmd(
+            Method::post,
+            "/ari/bridges?type=" + static_cast<std::string>(type),
+            [ this, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
+            {
+                try
+                {
+                    auto tree = FromJson(body);
+                    /*
+                    auto bridge = std::make_unique<Bridge>(
+                        Get<std::string>(tree, {"id"}),
+                        Get<std::string>(tree, {"technology"}),
+                        Get<std::string>(tree, {"bridge_type"}),
+                        &_client
+                    );
+                    h(std::move(bridge));
+                    */
+                    Bridge* bridge = new Bridge(
+                        Get<std::string>(tree, {"id"}),
+                        Get<std::string>(tree, {"technology"}),
+                        Get<std::string>(tree, {"bridge_type"}),
+                        &client
+                    );
+                    h(std::unique_ptr<Bridge>(bridge));
+                }
+                catch (const std::exception& e)
+                {
+                    // TODO
+                    std::cerr << "Exception in POST bridge response: " << e.what() << '\n';
+                }
+                catch (...)
+                {
+                    // TODO
+                    std::cerr << "Unknown exception in POST bridge response\n";
+                }
+            }
+        );
+    }
+
 
 private:
 
@@ -150,6 +196,31 @@ private:
                 if (chStateChanged) chStateChanged(ch->second);
             }
         );
+
+        client.OnEvent(
+            "PlaybackStarted",
+            [this](const JsonTree& e)
+            {
+                const std::string id = Get<std::string>( e, {"playback", "id"} );
+                const std::string media_uri = Get<std::string>( e, {"playback", "media_uri"} );
+                const std::string target_uri = Get<std::string>( e, {"playback", "target_uri"} );
+                const std::string language = Get<std::string>( e, {"playback", "language"} );
+                const std::string state = Get<std::string>( e, {"playback", "state"} );
+            }
+        );
+
+        client.OnEvent(
+            "PlaybackFinished",
+            [this](const JsonTree& e)
+            {
+                const std::string id = Get<std::string>( e, {"playback", "id"} );
+                const std::string media_uri = Get<std::string>( e, {"playback", "media_uri"} );
+                const std::string target_uri = Get<std::string>( e, {"playback", "target_uri"} );
+                const std::string language = Get<std::string>( e, {"playback", "language"} );
+                const std::string state = Get<std::string>( e, {"playback", "state"} );
+            }
+        );
+
     }
 
     Client& client;

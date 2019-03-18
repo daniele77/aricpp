@@ -40,6 +40,7 @@
 #include "terminationdtmf.h"
 #include "method.h"
 #include "recording.h"
+#include "playback.h"
 #include "urlencode.h"
 
 namespace aricpp
@@ -125,6 +126,7 @@ public:
     /// Destroy the object and the asterisk bridge
     ~Bridge() { Destroy(); }
 
+#if 0
     /// Create a new bridge on asterisk
     /// The handler takes a unique_ptr<Bridge> to the new bridge as parameter
     template<typename CreationHandler>
@@ -168,6 +170,7 @@ public:
             }
         );
     }
+#endif
 
     Proxy& Add(const Channel& ch, Role role=Role::participant)
     {
@@ -211,10 +214,11 @@ public:
         return Proxy::Command(Method::delete_, "/ari/bridges/" + id + "/moh", client);
     }
 
-    Proxy& Play(const std::string& media, const std::string& lang={},
+    ProxyPar<Playback>& Play(const std::string& media, const std::string& lang={},
                 const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
     {
-        return Proxy::Command(
+        Playback playback(media, client);
+        return ProxyPar<Playback>::Command(
             Method::post,
             "/ari/bridges/"+id+"/play?"
             "media=" + UrlEncode(media) +
@@ -222,7 +226,8 @@ public:
             ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
             ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
             ( skipms < 0 ? "" : "&skipms=" + std::to_string(skipms) ),
-            client
+            client,
+            playback
         );
     }
 
@@ -257,6 +262,9 @@ public:
     bool IsDead() const { return id.empty(); }
 
 private:
+
+    friend class AriModel;
+
     Bridge(const std::string& _id, const std::string& _technology, const std::string& _bridge_type, Client* _client) :
         id(_id), technology(_technology), bridge_type(_bridge_type), client(_client)
     {}
