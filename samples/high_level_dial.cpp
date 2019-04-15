@@ -52,8 +52,8 @@ enum class ChMode { calling=1, called=2, both=3 };
 class Call
 {
 public:
-    Call( Client& c, shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh, bool _moh ) :
-        client(&c), calling(callingCh), called(calledCh), moh(_moh)
+    Call( AriModel& m, shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh, bool _moh ) :
+        model(m), calling(callingCh), called(calledCh), moh(_moh)
     {}
 
     bool HasChannel(const Channel& ch, ChMode mode) const
@@ -72,8 +72,7 @@ public:
 
     void DialingChUp()
     {
-        Bridge::Create(
-            *client,
+        model.CreateBridge(
             [this](unique_ptr<Bridge> newBridge)
             { 
                 bridge = move(newBridge);
@@ -92,7 +91,7 @@ public:
 
 private:
 
-    Client* client;
+    AriModel& model;
     shared_ptr<Channel> calling;
     shared_ptr<Channel> called;
     unique_ptr<Bridge> bridge;
@@ -102,9 +101,8 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c, AriModel& m, bool _moh, bool _autoAns, bool _sipCh) :
+    CallContainer(const string& app, AriModel& m, bool _moh, bool _autoAns, bool _sipCh) :
         application(app),
-        connection(c), 
         channels(m), 
         moh(_moh),
         inviteVariables(CalcVariables(_autoAns, _sipCh)),
@@ -198,7 +196,7 @@ private:
 
     void Create(shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh)
     {
-        calls.emplace_back(make_shared<Call>(connection, callingCh, calledCh, moh));
+        calls.emplace_back(make_shared<Call>(channels, callingCh, calledCh, moh));
     }
 
     void Remove(shared_ptr<Call> call)
@@ -229,7 +227,6 @@ private:
 
 
     const string application;
-    Client& connection;
     vector<shared_ptr<Call>> calls;
     AriModel& channels;
     const bool moh;
@@ -303,7 +300,7 @@ int main( int argc, char* argv[] )
 
         Client client( ios, host, port, username, password, application );
         AriModel channels( client );
-        CallContainer calls( application, client, channels, moh, autoAns, sipCh );
+        CallContainer calls( application, channels, moh, autoAns, sipCh );
 
         client.Connect( [&](boost::system::error_code e){
             if (e)

@@ -172,12 +172,13 @@ public:
     }
 #endif
 
-    Proxy& Add(const Channel& ch, Role role=Role::participant)
+    Proxy& Add(const Channel& ch, bool mute=false, Role role=Role::participant)
     {
         return Proxy::Command(
             Method::post,
             "/ari/bridges/" + id +
             "/addChannel?channel=" + ch.Id() +
+            "&mute=" + (mute ? "true" : "false") +
             "&role=" + static_cast<std::string>(role),
             client
         );
@@ -215,15 +216,15 @@ public:
     }
 
     ProxyPar<Playback>& Play(const std::string& media, const std::string& lang={},
-                const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
+                             int offsetms=-1, int skipms=-1) const
     {
-        Playback playback(media, client);
+        Playback playback(client);
         return ProxyPar<Playback>::Command(
             Method::post,
             "/ari/bridges/"+id+"/play?"
             "media=" + UrlEncode(media) +
             ( lang.empty() ? "" : "&lang=" + lang ) +
-            ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
+            "&playbackId=" + playback.Id() +
             ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
             ( skipms < 0 ? "" : "&skipms=" + std::to_string(skipms) ),
             client,

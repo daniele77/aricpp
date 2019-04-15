@@ -65,12 +65,17 @@ public:
     AriModel& operator=(const AriModel&&) = delete;
 
     using ChHandler = std::function<void(ChannelPtr)>;
+    using ChVarSetHandler = std::function<void(ChannelPtr, const std::string&, const std::string&)>;
+    using PlaybackHandler = std::function<void(const Playback&)>;
     using StasisStartedHandler = std::function<void(ChannelPtr, bool external)>;
 
     void OnChannelCreated(ChHandler handler) { chCreated = handler; }
     void OnChannelDestroyed(ChHandler handler) { chDestroyed = handler; }
     void OnChannelStateChanged(ChHandler handler) { chStateChanged = handler; }
+    void OnChannelVarSet(ChVarSetHandler handler) { chVarSet = handler; }
     void OnStasisStarted(StasisStartedHandler handler) { stasisStarted = handler; }
+    void OnPlaybackStarted(PlaybackHandler handler) { PlaybackStarted = handler; }
+    void OnPlaybackFinished(PlaybackHandler handler) { PlaybackFinished = handler; }
 
     ChannelPtr CreateChannel()
     {
@@ -198,6 +203,18 @@ private:
         );
 
         client.OnEvent(
+            "ChannelVarset",
+            [this](const JsonTree& e)
+            {
+                auto variable = Get<std::string>(e, {"variable"});
+                auto value = Get<std::string>(e, {"value"});
+                auto chId = Get<std::string>(e, {"channel","id"});
+                auto ch = channels.find(chId);
+                if ( ch == channels.end() ) return;
+                chVarSet(ch->second, variable, value);
+            }
+        );
+        client.OnEvent(
             "PlaybackStarted",
             [this](const JsonTree& e)
             {
@@ -206,6 +223,7 @@ private:
                 const std::string target_uri = Get<std::string>( e, {"playback", "target_uri"} );
                 const std::string language = Get<std::string>( e, {"playback", "language"} );
                 const std::string state = Get<std::string>( e, {"playback", "state"} );
+                if (PlaybackStarted) PlaybackStarted(Playback(id, &client));
             }
         );
 
@@ -218,6 +236,7 @@ private:
                 const std::string target_uri = Get<std::string>( e, {"playback", "target_uri"} );
                 const std::string language = Get<std::string>( e, {"playback", "language"} );
                 const std::string state = Get<std::string>( e, {"playback", "state"} );
+                if (PlaybackFinished) PlaybackFinished(Playback(id, &client));
             }
         );
 
@@ -230,7 +249,10 @@ private:
     ChHandler chCreated;
     ChHandler chDestroyed;
     ChHandler chStateChanged;
+    ChVarSetHandler chVarSet;
     StasisStartedHandler stasisStarted;
+    PlaybackHandler PlaybackStarted;
+    PlaybackHandler PlaybackFinished;
 };
 
 } // namespace aricpp

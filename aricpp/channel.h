@@ -276,7 +276,7 @@ public:
     ProxyPar<Playback>& Play(const std::string& media, const std::string& lang={},
                 const std::string& playbackId={}, int offsetms=-1, int skipms=-1) const
     {
-        Playback playback(name, client);
+        Playback playback(client);
         return ProxyPar<Playback>::Command(
             Method::post,
             "/ari/channels/"+id+"/play?"

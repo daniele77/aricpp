@@ -202,11 +202,11 @@ private:
                     CallBack( e );
                 else
                 {
-    #ifdef ARICPP_TRACE_HTTP
+#ifdef ARICPP_TRACE_HTTP
                     std::cout << "### <= " << resp.result() << " " << resp.reason() << '\n';
-                    if ( !resp.body.empty() )
-                        std::cout << "       " << resp.body << '\n';
-    #endif
+                    if ( !resp.body().empty() )
+                        std::cout << "       " << resp.body() << '\n';
+#endif
                     CallBack( e, resp.result(), resp.reason().to_string(), resp.body() );
                 }
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
  * ARICPP - ARI interface for C++
- * Copyright (C) 2018 Daniele Pallastrelli
+ * Copyright (C) 2019 Daniele Pallastrelli
  *
  * This file is part of aricpp.
  * For more information, see http://github.com/daniele77/aricpp
@@ -31,8 +31,8 @@
  ******************************************************************************/
 
 
-#ifndef ARICPP_RECORDING_H_
-#define ARICPP_RECORDING_H_
+#ifndef ARICPP_PLAYBACK_H_
+#define ARICPP_PLAYBACK_H_
 
 #include <string>
 #include "proxy.h"
@@ -41,30 +41,55 @@
 namespace aricpp
 {
 
-class Recording
+class Playback
 {
 public:
-    Recording() = default;
-    Recording(const Recording&) = default;
-    Recording(Recording&&) = default;
-    Recording& operator=(const Recording&) = default;
-    Recording& operator=(Recording&&) = default;
+    Playback() = default;
+    Playback(const Playback&) = default;
+    Playback(Playback&&) = default;
+    Playback& operator=(const Playback&) = default;
+    Playback& operator=(Playback&&) = default;
+
+    const std::string& Id() const { return id; }
 
     Proxy& Stop()
     {
-        if (name.empty()) return Proxy::CreateEmpty();
+        if (id.empty()) return Proxy::CreateEmpty();
 
-        return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/stop", client);
+        return Proxy::Command(Method::delete_, "playbacks/"+id, client);
     }
 private:
     friend class Channel;
     friend class Bridge;
+    friend class AriModel;
 
-    Recording(const std::string& _name, Client* _client) : name(_name), client(_client) {}
+    Playback(Client* _client) : 
+        id(NextId()), client(_client)
+    {}
 
-    std::string name;
+    Playback(const std::string& _id, Client* _client) : 
+        id(_id), client(_client)
+    {}
+
+    static std::string NextId()
+    {
+        static unsigned long  long nextId = 0;
+        return "aricpp-p" + std::to_string(nextId++);
+    }
+
+    std::string id;
     Client* client;
 };
+
+inline bool operator == (const Playback& lhs, const Playback& rhs)
+{
+    return lhs.Id() == rhs.Id();
+}
+
+inline bool operator != (const Playback& lhs, const Playback& rhs)
+{
+    return lhs.Id() != rhs.Id();
+}
 
 } // namespace aricpp
 

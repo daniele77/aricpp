@@ -1,9 +1,12 @@
 # Changelog
 
-## Version 0.6.0 - <DATE>
+## Version 0.6.0 - 2019-04-15
 
+- Solve an issue with stop record function
 - The bridge creation is now delegated to the AriModel class (for uniformity with Channel)
 - Complete management of playbacks
+- Channel variables notifications
+- Monodirectional audio support when adding a channel to a bridge
 
 ## Version 0.5.0 - 2019-02-14
 

@@ -106,9 +106,9 @@ int main( int argc, char* argv[] )
         vector<shared_ptr<Channel>> channels;
 
         Client client( ios, host, port, username, password, application );
+        AriModel model( client );
         shared_ptr<Bridge> bridge;
-        Bridge::Create(
-            client,
+        model.CreateBridge(
             [&bridge](unique_ptr<Bridge> newBridge)
             { 
                 bridge = move(newBridge);
@@ -116,7 +116,6 @@ int main( int argc, char* argv[] )
             },
             Bridge::Type::holding
         );
-        AriModel model( client );
         model.OnStasisStarted(
             [&channels, &bridge](shared_ptr<Channel> ch, bool external)
             {
@@ -126,12 +125,12 @@ int main( int argc, char* argv[] )
                     if (channels.empty())
                     {
                         cout << "Adding announcer to bridge" << endl;
-                        bridge->Add(*ch, Bridge::Role::announcer);
+                        bridge->Add(*ch, false /* mute */, Bridge::Role::announcer);
                     }
                     else
                     {
                         cout << "Adding participant to bridge" << endl;                        
-                        bridge->Add(*ch, Bridge::Role::participant);
+                        bridge->Add(*ch, false /* mute */, Bridge::Role::participant);
                     }
                     channels.push_back(ch);
                 }
