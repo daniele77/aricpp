@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.7.0 - 2019-06-13
+
+- Manage Global Variable events
+
 ## Version 0.6.0 - 2019-04-15
 
 - Solve an issue with stop record function

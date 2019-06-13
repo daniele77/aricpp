@@ -208,10 +208,19 @@ private:
             {
                 auto variable = Get<std::string>(e, {"variable"});
                 auto value = Get<std::string>(e, {"value"});
-                auto chId = Get<std::string>(e, {"channel","id"});
-                auto ch = channels.find(chId);
-                if ( ch == channels.end() ) return;
-                chVarSet(ch->second, variable, value);
+                try
+                {
+                    auto chId = Get<std::string>(e, {"channel","id"});
+                    auto ch = channels.find(chId);
+                    if ( ch == channels.end() ) return;
+                    // channel variable
+                    chVarSet(ch->second, variable, value);
+                }
+                catch (std::exception&)
+                {
+                    // global variable
+                    chVarSet(nullptr, variable, value);
+                }
             }
         );
         client.OnEvent(
