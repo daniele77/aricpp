@@ -185,7 +185,7 @@ public:
     /**
      * @brief Create an asterisk channel and dial
      *
-     * @param endpoint Endpoint to call (e.g., pjsip/100)
+     * @param endpoint Endpoint to dial (e.g., pjsip/100)
      * @param application The stasis application that is subscribed to the originated channel.
      *                    When the channel is answered, it will be passed to this Stasis application.
      * @param callerId CallerID to use for the call
@@ -193,7 +193,7 @@ public:
                         (e.g., {"CALLERID(name)":"Alice", "VAR2":"Value"} )
      * @return Proxy& You can call After() and OnError() on the returned object
      */
-    Proxy& Call(
+    Proxy& Dial(
         const std::string& endpoint,
         const std::string& application,
         const std::string& callerId,
