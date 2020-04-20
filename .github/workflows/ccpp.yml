@@ -12,9 +12,15 @@ jobs:
     - name: setup dependencies
       run: |
         sudo apt-get remove 'libboost-.*'
-        sudo add-apt-repository ppa:mhier/libboost-latest
         sudo apt-get -y update
-        sudo apt-get -y install libboost-all-dev
+        mkdir tmp
+        cd tmp
+        wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
+        tar xzvf boost_1_69_0.tar.gz
+        cd boost_1_69_0
+        ./bootstrap.sh --prefix=/usr/
+        ./b2
+        sudo ./b2 install
     - name: make
       run: |
         cd samples
