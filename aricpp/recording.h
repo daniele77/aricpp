@@ -49,11 +49,29 @@ public:
     Recording(Recording&&) = default;
     Recording& operator=(const Recording&) = default;
     Recording& operator=(Recording&&) = default;
+    
+    Proxy& Abort()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name, client);
+    }
 
     Proxy& Stop()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/stop", client);
+    }
+    
+    Proxy& Mute()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/mute", client);
+    }
+    
+    Proxy& Unmute()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name+"/stop", client);
     }
     
     Proxy& Pause()
