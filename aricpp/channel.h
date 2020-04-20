@@ -42,6 +42,8 @@
 #include "playback.h"
 #include "urlencode.h"
 
+#define ARICPP_DEPRECATED_API
+
 namespace aricpp
 {
 
@@ -181,6 +183,19 @@ public:
     {
         return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
+
+#ifdef ARICPP_DEPRECATED_API
+    [[deprecated("Use the method Dial instead")]]
+    Proxy& Call(
+        const std::string& endpoint,
+        const std::string& application,
+        const std::string& callerId,
+        std::string variables={}
+    ) const
+    {
+        return Dial(endpoint, application, callerId, variables);
+    }
+#endif // ARICPP_DEPRECATED_API
 
     /**
      * @brief Create an asterisk channel and dial

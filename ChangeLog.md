@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add Recording::Mute, Recording::Unmute and Recording::Abort
+- Rename Channel::Call method to Channel::Dial
+
 ## Version 0.8.0 - 2020-04-20
 
 - Add Recording::Pause and Recording::Resume

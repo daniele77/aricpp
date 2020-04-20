@@ -170,7 +170,7 @@ private:
         
         auto calledCh = channels.CreateChannel();
         Create(callingCh, calledCh);
-        calledCh->Call(chPrefix+ext, application, callerName, inviteVariables)
+        calledCh->Dial(chPrefix+ext, application, callerName, inviteVariables)
             .OnError([callingCh](Error e, const string& msg)
                 {
                     if (e == Error::network)
