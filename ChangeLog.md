@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.8.0 - 2020-04-20
+
+- Add Recording::Pause and Recording::Resume
+- Add new example for playing and recording
+- Remove error message when a channel var set event is not set
+
 ## Version 0.7.0 - 2019-06-13
 
 - Manage Global Variable events

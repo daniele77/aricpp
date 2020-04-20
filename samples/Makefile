@@ -33,7 +33,7 @@
 override CXXFLAGS += -O3 -Werror -Wall -Wextra -Wpedantic -std=c++1y -I..
 override LDLIBS += -lboost_program_options -lboost_system -lpthread
 
-SAMPLES := low_level_dial high_level_dial chat query holding_bridge
+SAMPLES := low_level_dial high_level_dial chat query holding_bridge play_and_record
 
 .PHONY: clean all
 

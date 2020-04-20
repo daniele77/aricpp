@@ -53,9 +53,21 @@ public:
     Proxy& Stop()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-
         return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/stop", client);
     }
+    
+    Proxy& Pause()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/pause", client);
+    }
+
+    Proxy& Resume()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name+"/pause", client);
+    }
+
 private:
     friend class Channel;
     friend class Bridge;

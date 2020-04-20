@@ -206,6 +206,8 @@ private:
             "ChannelVarset",
             [this](const JsonTree& e)
             {
+                if (!chVarSet) return;
+
                 auto variable = Get<std::string>(e, {"variable"});
                 auto value = Get<std::string>(e, {"value"});
                 try
