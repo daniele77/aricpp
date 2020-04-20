@@ -1,0 +1,17 @@
+name: C/C++ CI of aricpp
+
+on: [push,pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup dependencies
+      run: |
+        sudo apt-get -y update
+        sudo apt-get -y install libboost-all-dev
+    - name: make
+      run: make
