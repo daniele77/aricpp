@@ -11,6 +11,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: setup dependencies
       run: |
+        sudo apt-get remove 'libboost-.*'
         sudo add-apt-repository ppa:mhier/libboost-latest
         sudo apt-get -y update
         sudo apt-get -y install libboost-all-dev
