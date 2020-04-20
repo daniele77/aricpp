@@ -49,6 +49,12 @@ public:
     Recording(Recording&&) = default;
     Recording& operator=(const Recording&) = default;
     Recording& operator=(Recording&&) = default;
+    
+    Proxy& Discard()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name, client);
+    }
 
     Proxy& Stop()
     {
