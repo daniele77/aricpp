@@ -14,4 +14,6 @@ jobs:
         sudo apt-get -y update
         sudo apt-get -y install libboost-all-dev
     - name: make
-      run: make
+      run: |
+        cd samples
+        make
