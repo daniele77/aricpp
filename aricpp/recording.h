@@ -56,10 +56,28 @@ public:
         return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/stop", client);
     }
     
+    Proxy& Mute()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/mute", client);
+    }
+    
+    Proxy& Unmute()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name+"/stop", client);
+    }
+    
     Proxy& Pause()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/pause", client);
+    }
+    
+    Proxy& Unpause()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name+"/pause", client);
     }
 
     Proxy& Resume()
