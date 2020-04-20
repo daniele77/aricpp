@@ -13,7 +13,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:mhier/libboost-latest
         sudo apt-get -y update
-        sudo apt-get -y install libboost1.67-all-dev
+        sudo apt-get -y install libboost-all-dev
     - name: make
       run: |
         cd samples
