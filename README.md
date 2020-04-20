@@ -167,7 +167,7 @@ client.Connect( [&](boost::system::error_code e){
         );
 
         auto ch = channels.CreateChannel();
-        ch->Call("pjsip/100", stasisapp, "caller name")
+        ch->Dial("pjsip/100", stasisapp, "caller name")
             .OnError([](Error e, const string& msg)
                 {
                     if (e == Error::network)
