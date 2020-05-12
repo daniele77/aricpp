@@ -183,6 +183,11 @@ public:
     {
         return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
+    
+    Proxy& Continue() const
+    {
+        return Proxy::Command(Method::post, "/ari/channels/" + id + "/continue", client);
+    }
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the method Dial instead")]]
