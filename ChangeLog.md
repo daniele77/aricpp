@@ -4,6 +4,7 @@
 
 - Add Recording::Mute, Recording::Unmute and Recording::Abort
 - Rename Channel::Call method to Channel::Dial
+- Add Channel::Continue method
 
 ## Version 0.8.0 - 2020-04-20
 
