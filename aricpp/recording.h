@@ -50,6 +50,12 @@ public:
     Recording& operator=(const Recording&) = default;
     Recording& operator=(Recording&&) = default;
     
+    Proxy& Delete()
+    {
+        if (name.empty()) return Proxy::CreateEmpty();
+        return Proxy::Command(Method::delete_, "/ari/recordings/stored/"+name, client);
+    }
+    
     Proxy& Abort()
     {
         if (name.empty()) return Proxy::CreateEmpty();
