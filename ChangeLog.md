@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add Recording::Mute, Recording::Unmute and Recording::Abort
+- Add Recording::Mute, Recording::Unmute, Recording::Abort and Recording::Delete
 - Rename Channel::Call method to Channel::Dial
 - Add Channel::Continue method
 
