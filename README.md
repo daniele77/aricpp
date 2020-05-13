@@ -1,3 +1,5 @@
+![C/C++ CI of aricpp](https://github.com/daniele77/aricpp/workflows/C/C++%20CI%20of%20aricpp/badge.svg)
+
 # aricpp
 
 Asterisk ARI interface bindings for modern C++
