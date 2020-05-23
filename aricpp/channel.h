@@ -111,6 +111,16 @@ public:
     {
         StateChanged(_state);
     }
+    
+    Proxy& Move(const std::string& app, const std::string& appArgs={}) const {
+        return Proxy::Command(
+            Method::post,
+            "/ari/channels/"+id+"/move?"
+            "app=" + app +
+            ( appArgs.empty() ? "" : "&appArgs=" + appArgs ) +
+            client
+        );
+    }
 
     Proxy& Ring() const
     {
