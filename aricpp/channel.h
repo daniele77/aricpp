@@ -117,7 +117,7 @@ public:
             Method::post,
             "/ari/channels/"+id+"/move?"
             "app=" + app +
-            ( appArgs.empty() ? "" : "&appArgs=" + appArgs ) +,
+            ( appArgs.empty() ? "" : "&appArgs=" + appArgs ),
             client
         );
     }
