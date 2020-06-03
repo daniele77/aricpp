@@ -56,7 +56,7 @@ public:
     {
         if (id.empty()) return Proxy::CreateEmpty();
 
-        return Proxy::Command(Method::delete_, "playbacks/"+id, client);
+        return Proxy::Command(Method::delete_, "/ari/playbacks/"+id, client);
     }
 private:
     friend class Channel;
