@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.9.1 - 2020-10-29
+
+- Expose Id of the bridge
+
 ## Version 0.9.0 - 2020-06-15
 
 - Add Recording::Mute, Recording::Unmute, Recording::Abort and Recording::Delete

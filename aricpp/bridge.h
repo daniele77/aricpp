@@ -255,12 +255,13 @@ public:
     Proxy& Destroy()
     {
         if ( IsDead() ) return Proxy::CreateEmpty();
-        auto tmp = id;
-        id.clear();
-        return Proxy::Command(Method::delete_, "/ari/bridges/"+tmp, client);
+        isDead = true;
+        return Proxy::Command(Method::delete_, "/ari/bridges/"+id, client);
     }
 
-    bool IsDead() const { return id.empty(); }
+    bool IsDead() const { return isDead; }
+
+    const std::string& Id() const { return id; }
 
 private:
 
@@ -274,6 +275,7 @@ private:
     std::string technology;
     std::string bridge_type;
     Client* client;
+    bool isDead = false;
 };
 
 template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::announcer{"announcer"};
