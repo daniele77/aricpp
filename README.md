@@ -201,8 +201,11 @@ Distributed under the Boost Software License, Version 1.0.
 
 ## Contact
 
-Please report issues or questions here:
+Please report issues here:
 <https://github.com/daniele77/aricpp/issues>
+
+and questions, feature requests, ideas, anything else here:
+<http://github.com/daniele77/aricpp/discussions>
 
 ---
 
@@ -212,6 +215,7 @@ Any feedback from users and stakeholders, even simple questions about
 how things work or why they were done a certain way, carries value
 and can be used to improve the library.
 
-Even if you just have questions, asking them in issues provides valuable
-information that can be used to improve the library - do not hesitate,
+Even if you just have questions, 
+asking them in [GitHub Discussions](http://github.com/daniele77/aricpp/discussions)
+provides valuable information that can be used to improve the library - do not hesitate,
 no question is insignificant or unimportant!
