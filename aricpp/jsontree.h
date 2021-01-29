@@ -47,10 +47,10 @@ using JsonTree = boost::property_tree::ptree;
 
 inline void Dump(const JsonTree& e) { boost::property_tree::write_json(std::cout, e); }
 inline std::string ToString(const JsonTree& e)
-{ 
-    std::string tmp;
-    boost::property_tree::write_json(tmp, e);
-    return tmp;
+{
+    std::ostringstream os;
+    boost::property_tree::write_json(os, e);
+    return os.str();
 }
 
 inline JsonTree FromJson(const std::string& s)

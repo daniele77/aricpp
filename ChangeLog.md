@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix ToString(JsonTree). Fixes #30
+
 ## Version 0.9.1 - 2020-10-29
 
 - Expose Id of the bridge
