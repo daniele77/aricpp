@@ -432,11 +432,10 @@ int main( int argc, char* argv[] )
             if (e)
             {
                 cerr << "Connection error: " << e.message() << endl;
-                ios.stop();
             }
             else
                 cout << "Connected" << endl;
-        });
+        }, 10 /* reconnection seconds */ );
 
         ios.run();
     }

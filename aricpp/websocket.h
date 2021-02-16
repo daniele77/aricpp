@@ -54,8 +54,14 @@ public:
     using ConnectHandler = std::function< void( const boost::system::error_code& ) >;
     using ReceiveHandler = std::function< void( const std::string&, const boost::system::error_code& ) >;
 
-    WebSocket( boost::asio::io_service& _ios, std::string _host, std::string _port ) :
-        ios(_ios), host(std::move(_host)), port(std::move(_port)), resolver(ios), socket(ios), websocket(socket)
+    WebSocket(boost::asio::io_service& _ios, std::string _host, std::string _port) :
+        ios(_ios),
+        host(std::move(_host)),
+        port(std::move(_port)),
+        resolver(ios),
+        socket(ios),
+        websocket(socket),
+        pingTimer(ios)
     {}
 
     WebSocket() = delete;
@@ -68,10 +74,71 @@ public:
         Close();
     }
 
-    void Connect( std::string req, ConnectHandler h )
+    void Connect(std::string req, ConnectHandler h, std::size_t _connectionRetrySeconds)
     {
         request = std::move(req);
         onConnection = std::move(h);
+        Resolve();
+        connectionRetrySeconds = _connectionRetrySeconds;
+        if (connectionRetrySeconds != 0)
+            StartPingTimer();
+    }
+
+    void Close() noexcept
+    {
+        try
+        {
+            if (socket.is_open())
+            {
+                if (connected)
+                    websocket.close(boost::beast::websocket::close_code::normal);
+                socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
+                socket.cancel();
+                socket.close();
+            }
+        }
+        catch(const std::exception&)
+        {
+            // nothing to do
+        }
+        connected = false;
+    }
+
+    void Receive( ReceiveHandler h )
+    {
+        onReceive = std::move(h);
+        Read();
+    }
+
+private:
+
+    void Ping()
+    {
+        if (connected)
+        {
+            boost::beast::websocket::ping_data pingWebSocketFrame;
+            pingWebSocketFrame.append("aricpp");
+            websocket.async_ping(
+                pingWebSocketFrame,
+                [this](const boost::beast::error_code& error_code)
+                {
+                    if (error_code.failed())
+                    {
+                        // remedy the situation. Close the current websocket connection and try to restart
+                        Close();
+                        Resolve();
+                    }
+                }
+            );
+        }
+        else
+        {
+            Resolve();
+        }
+    }
+
+    void Resolve()
+    {
         resolver.async_resolve(
             boost::asio::ip::tcp::resolver::query{ host, port },
             [this]( const boost::system::error_code& ec, boost::asio::ip::tcp::resolver::iterator i )
@@ -82,31 +149,22 @@ public:
         );
     }
 
-    void Close() noexcept
+    void PingTimerExpired()
     {
-        try
-        {
-            if ( socket.is_open() )
-            {
-                if ( connected )
-                    websocket.close( boost::beast::websocket::close_code::normal );
-                socket.cancel();
-                socket.close();
-            }
-        }
-        catch(const std::exception&)
-        {
-            // nothing to do
-        }
+        Ping();
+        StartPingTimer();
     }
 
-    void Receive( ReceiveHandler h )
+    void StartPingTimer()
     {
-        onReceive = std::move(h);
-        Read();
-    }
+        if (connectionRetrySeconds == 0) return;
 
-private:
+        pingTimer.expires_from_now(boost::asio::chrono::seconds(connectionRetrySeconds));
+        pingTimer.async_wait([this](const boost::system::error_code& e){
+            if (e) return;
+            PingTimerExpired();
+        });
+    }
 
     void Resolved( boost::asio::ip::tcp::resolver::iterator i )
     {
@@ -163,6 +221,9 @@ private:
     std::string request;
     ConnectHandler onConnection;
     ReceiveHandler onReceive;
+
+    boost::asio::steady_timer pingTimer;
+    std::size_t connectionRetrySeconds;
 };
 
 } // namespace aricpp

@@ -74,9 +74,11 @@ public:
     {
         model.CreateBridge(
             [this](unique_ptr<Bridge> newBridge)
-            { 
+            {
+                if (!newBridge) return;
+
                 bridge = move(newBridge);
-                bridge->Add( {&*calling, &*called} ); 
+                bridge->Add( {&*calling, &*called} );
             }
         );
     }
@@ -103,7 +105,7 @@ class CallContainer
 public:
     CallContainer(const string& app, AriModel& m, bool _moh, bool _autoAns, bool _sipCh) :
         application(app),
-        channels(m), 
+        channels(m),
         moh(_moh),
         inviteVariables(CalcVariables(_autoAns, _sipCh)),
         chPrefix(CalcChPrefix(_sipCh))
@@ -167,7 +169,7 @@ private:
         callingCh->GetVar("CALLERID(all)")
         .OnError([](Error, const string& msg) { cerr << "Error retrieving variable CALLERID: " << msg << endl; } )
         .After([](auto var){ cout << "CALLERID variable = " << var << endl; } );
-        
+
         auto calledCh = channels.CreateChannel();
         Create(callingCh, calledCh);
         calledCh->Dial(chPrefix+ext, application, callerName, inviteVariables)
@@ -298,7 +300,7 @@ int main( int argc, char* argv[] )
                 ios.stop();
             });
 
-        Client client( ios, host, port, username, password, application );
+        Client client(ios, host, port, username, password, application);
         AriModel channels( client );
         CallContainer calls( application, channels, moh, autoAns, sipCh );
 
@@ -306,12 +308,10 @@ int main( int argc, char* argv[] )
             if (e)
             {
                 cerr << "Connection error: " << e.message() << endl;
-                ios.stop();
             }
             else
                 cout << "Connected" << endl;
-        });
-
+        }, 10 /* reconnection seconds */ );
         ios.run();
     }
     catch (exception& e)

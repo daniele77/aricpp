@@ -66,8 +66,8 @@ public:
             std::string _user, std::string _password, std::string _application ) :
         user(std::move(_user)), password(std::move(_password)),
         application(std::move(_application)),
-        websocket( ios, host, port ),
-        httpclient( ios, host, port, user, password )
+        websocket(ios, host, port),
+        httpclient(ios, host, port, user, password)
     {}
 
     Client() = delete;
@@ -85,13 +85,21 @@ public:
         websocket.Close();
     }
 
-    void Connect( ConnectHandler h )
+    /**
+     * @brief Connect to asterisk via ARI
+     * 
+     * @param h the callback invoked when the library connect/disconnects to asterisk
+     * @param connectionRetrySeconds the period in seconds of reconnection tries. When this parameter is 0 (default)
+     * no reconnection is tried.
+     */
+    void Connect(ConnectHandler h, std::size_t connectionRetrySeconds = 0)
     {
         onConnection = std::move(h);
         websocket.Connect( "/ari/events?api_key="+user+":"+password+"&app="+application+"&subscribeAll=true", [this](auto e){
             if (e) onConnection(e);
             else this->WebsocketConnected(); // gcc requires "this"
-        } );
+        },
+        connectionRetrySeconds );
     }
 
     void OnEvent( const std::string& type, const EventHandler& e )
@@ -111,7 +119,7 @@ private:
     {
         websocket.Receive( [this](const std::string& msg, auto e){
             if ( e )
-                std::cerr << "Error ws receive: " << e.message() << std::endl; // TODO
+                std::cerr << "Error ws receive: " << e.message() << std::endl; // TODO remove print
             else
                 this->RawEvent( msg ); // gcc requires this
         });

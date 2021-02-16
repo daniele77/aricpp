@@ -87,6 +87,7 @@ public:
 
     /// Create a new bridge on asterisk
     /// The handler takes a unique_ptr<Bridge> to the new bridge as parameter
+    /// If an error occour, the unique_ptr passed is empty.
     template<typename CreationHandler>
     void CreateBridge(CreationHandler&& h, Bridge::Type type=Bridge::Type::mixing)
     {
@@ -117,13 +118,15 @@ public:
                 }
                 catch (const std::exception& e)
                 {
-                    // TODO
+                    // TODO: remove print?
                     std::cerr << "Exception in POST bridge response: " << e.what() << '\n';
+                    h({});
                 }
                 catch (...)
                 {
-                    // TODO
+                    // TODO: remove print?
                     std::cerr << "Unknown exception in POST bridge response\n";
+                    h({});
                 }
             }
         );

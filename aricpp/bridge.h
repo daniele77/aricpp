@@ -126,52 +126,6 @@ public:
     /// Destroy the object and the asterisk bridge
     ~Bridge() { Destroy(); }
 
-#if 0
-    /// Create a new bridge on asterisk
-    /// The handler takes a unique_ptr<Bridge> to the new bridge as parameter
-    template<typename CreationHandler>
-    static void Create(Client& _client, CreationHandler&& h, Type type=Type::mixing)
-    {
-        _client.RawCmd(
-            Method::post,
-            "/ari/bridges?type=" + static_cast<std::string>(type),
-            [ &_client, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
-            {
-                try
-                {
-                    auto tree = FromJson(body);
-                    /*
-                    auto bridge = std::make_unique<Bridge>(
-                        Get<std::string>(tree, {"id"}),
-                        Get<std::string>(tree, {"technology"}),
-                        Get<std::string>(tree, {"bridge_type"}),
-                        &_client
-                    );
-                    h(std::move(bridge));
-                    */
-                    Bridge* bridge = new Bridge(
-                        Get<std::string>(tree, {"id"}),
-                        Get<std::string>(tree, {"technology"}),
-                        Get<std::string>(tree, {"bridge_type"}),
-                        &_client
-                    );
-                    h(std::unique_ptr<Bridge>(bridge));
-                }
-                catch (const std::exception& e)
-                {
-                    // TODO
-                    std::cerr << "Exception in POST bridge response: " << e.what() << '\n';
-                }
-                catch (...)
-                {
-                    // TODO
-                    std::cerr << "Unknown exception in POST bridge response\n";
-                }
-            }
-        );
-    }
-#endif
-
     Proxy& Add(const Channel& ch, bool mute=false, Role role=Role::participant)
     {
         return Proxy::Command(

@@ -115,6 +115,8 @@ int main( int argc, char* argv[] )
         model.CreateBridge(
             [&bridge](unique_ptr<Bridge> newBridge)
             { 
+                if (!newBridge) return;
+
                 bridge = move(newBridge);
                 cout << "Bridge created" << endl;
             },
@@ -199,11 +201,10 @@ int main( int argc, char* argv[] )
             if (e)
             {
                 cerr << "Connection error: " << e.message() << endl;
-                ios.stop();
             }
             else
                 cout << "Connected" << endl;
-        });
+        }, 10 /* reconnection seconds */ );
 
         ios.run();
     }

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Optional asterisk reconnection. Fixes [#32](https://github.com/daniele77/aricpp/issues/32) 
 - Fix ToString(JsonTree). Fixes #30
 
 ## Version 0.9.1 - 2020-10-29

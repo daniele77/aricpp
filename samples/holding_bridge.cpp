@@ -111,6 +111,8 @@ int main( int argc, char* argv[] )
         model.CreateBridge(
             [&bridge](unique_ptr<Bridge> newBridge)
             { 
+                if (!newBridge) return;
+
                 bridge = move(newBridge);
                 cout << "Bridge created" << endl;
             },
