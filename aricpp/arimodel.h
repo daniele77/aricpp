@@ -66,6 +66,7 @@ public:
 
     using ChHandler = std::function<void(ChannelPtr)>;
     using ChVarSetHandler = std::function<void(ChannelPtr, const std::string&, const std::string&)>;
+    using ChDtmfHandler = std::function<void(ChannelPtr, const std::string &)>;
     using PlaybackHandler = std::function<void(const Playback&)>;
     using StasisStartedHandler = std::function<void(ChannelPtr, bool external)>;
 
@@ -73,6 +74,7 @@ public:
     void OnChannelDestroyed(ChHandler handler) { chDestroyed = handler; }
     void OnChannelStateChanged(ChHandler handler) { chStateChanged = handler; }
     void OnChannelVarSet(ChVarSetHandler handler) { chVarSet = handler; }
+    void OnChannelDtmfReceived(ChDtmfHandler handler) { chDtmfReceived = handler; }
     void OnStasisStarted(StasisStartedHandler handler) { stasisStarted = handler; }
     void OnPlaybackStarted(PlaybackHandler handler) { PlaybackStarted = handler; }
     void OnPlaybackFinished(PlaybackHandler handler) { PlaybackFinished = handler; }
@@ -228,6 +230,20 @@ private:
                 }
             }
         );
+
+        client.OnEvent(
+            "ChannelDtmfReceived",
+            [this](const JsonTree& e)
+            {
+                if (!chDtmfReceived) return;
+                auto id = Get<std::string>( e, {"channel", "id"} );
+                auto digit = Get<std::string>( e, {"digit"} );
+                auto ch = channels.find(id);
+                if (ch == channels.end() ) return;
+                chDtmfReceived(ch->second, digit);
+            }
+        );
+
         client.OnEvent(
             "PlaybackStarted",
             [this](const JsonTree& e)
@@ -264,6 +280,7 @@ private:
     ChHandler chDestroyed;
     ChHandler chStateChanged;
     ChVarSetHandler chVarSet;
+    ChDtmfHandler chDtmfReceived;
     StasisStartedHandler stasisStarted;
     PlaybackHandler PlaybackStarted;
     PlaybackHandler PlaybackFinished;
