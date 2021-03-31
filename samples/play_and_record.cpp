@@ -145,8 +145,7 @@ int main( int argc, char* argv[] )
             }
         );
 
-        client.OnEvent("ChannelDtmfReceived", [&](const aricpp::JsonTree& event) {
-            auto digit = aricpp::Get<std::string>(event, { "digit" });
+        model.OnChannelDtmfReceived([&](std::shared_ptr<aricpp::Channel> /*channel*/, const std::string &digit) {
             std::cout << "Received digit " << digit << std::endl;
             if (digit == "1")
             {
