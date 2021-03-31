@@ -30,13 +30,12 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_RECORDING_H_
 #define ARICPP_RECORDING_H_
 
 #include <string>
-#include "proxy.h"
 #include "client.h"
+#include "proxy.h"
 
 namespace aricpp
 {
@@ -49,47 +48,47 @@ public:
     Recording(Recording&&) = default;
     Recording& operator=(const Recording&) = default;
     Recording& operator=(Recording&&) = default;
-    
+
     Proxy& Delete()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-        return Proxy::Command(Method::delete_, "/ari/recordings/stored/"+name, client);
+        return Proxy::Command(Method::delete_, "/ari/recordings/stored/" + name, client);
     }
-    
+
     Proxy& Abort()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name, client);
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/" + name, client);
     }
 
     Proxy& Stop()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-        return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/stop", client);
+        return Proxy::Command(Method::post, "/ari/recordings/live/" + name + "/stop", client);
     }
-    
+
     Proxy& Mute()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-        return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/mute", client);
+        return Proxy::Command(Method::post, "/ari/recordings/live/" + name + "/mute", client);
     }
-    
+
     Proxy& Unmute()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name+"/stop", client);
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/" + name + "/stop", client);
     }
-    
+
     Proxy& Pause()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-        return Proxy::Command(Method::post, "/ari/recordings/live/"+name+"/pause", client);
+        return Proxy::Command(Method::post, "/ari/recordings/live/" + name + "/pause", client);
     }
 
     Proxy& Resume()
     {
         if (name.empty()) return Proxy::CreateEmpty();
-        return Proxy::Command(Method::delete_, "/ari/recordings/live/"+name+"/pause", client);
+        return Proxy::Command(Method::delete_, "/ari/recordings/live/" + name + "/pause", client);
     }
 
 private:

@@ -1,0 +1,38 @@
+---
+BasedOnStyle:   LLVM
+ColumnLimit:    120
+---
+Language:       Cpp
+Standard:       c++14
+UseTab:         Never
+TabWidth:       4
+IndentWidth:    4
+ContinuationIndentWidth:    4
+AccessModifierOffset:       -4
+IncludeCategories:
+  - Regex:      '^<[[:alnum:]_]+\.h(pp)?>'
+    Priority:   2
+  - Regex:      '^<[[:alnum:]_]+>'
+    Priority:   1
+  - Regex:      '^(<|"(gtest|gmock)/)'
+    Priority:   3
+AllowShortEnumsOnASingleLine:           false
+AllowShortIfStatementsOnASingleLine:    WithoutElse
+AlwaysBreakBeforeMultilineStrings:      false
+AlwaysBreakTemplateDeclarations:        Yes
+BreakBeforeBraces:  Custom
+BraceWrapping:
+  AfterClass:       true
+  AfterControlStatement: true
+  AfterFunction:    true
+  AfterNamespace:   true
+  AfterStruct:      true
+  BeforeCatch:      true
+  BeforeElse:       true
+  BeforeLambdaBody: true
+PointerAlignment:   Left
+AlignAfterOpenBracket:  AlwaysBreak
+BinPackArguments:           false
+SpaceAfterTemplateKeyword:  false
+SpacesInParentheses:        false
+SpacesInSquareBrackets:     false

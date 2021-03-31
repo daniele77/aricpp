@@ -30,12 +30,11 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_HTTPCLIENT_H_
 #define ARICPP_HTTPCLIENT_H_
 
-#include <string>
 #include <queue>
+#include <string>
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -55,49 +54,52 @@ namespace aricpp
 class HttpClient
 {
 public:
-    using ResponseHandler = std::function< void( const boost::system::error_code&, int status, const std::string& reason, const std::string& body ) >;
+    using ResponseHandler = std::function<void(
+        const boost::system::error_code&, int status, const std::string& reason, const std::string& body)>;
 
-    HttpClient( boost::asio::io_service& _ios, std::string _host, std::string _port, std::string user, std::string password ) :
-        ios(_ios), host(std::move(_host)), port(std::move(_port)),
-        auth(GetBasicAuth(user, password)),
-        resolver(ios),
-        socket(ios)
+    HttpClient(
+        boost::asio::io_service& _ios, std::string _host, std::string _port, std::string user, std::string password)
+        : ios(_ios), host(std::move(_host)), port(std::move(_port)), auth(GetBasicAuth(user, password)), resolver(ios),
+          socket(ios)
 #ifdef ARICPP_HTTP_TIMEOUT
-        ,timer(ios)
+          ,
+          timer(ios)
 #endif
-    {}
+    {
+    }
 
     HttpClient() = delete;
-    HttpClient( const HttpClient& ) = delete;
-    HttpClient( HttpClient&& ) = delete;
-    HttpClient& operator = ( const HttpClient& ) = delete;
+    HttpClient(const HttpClient&) = delete;
+    HttpClient(HttpClient&&) = delete;
+    HttpClient& operator=(const HttpClient&) = delete;
 
-    void SendRequest( Method _method, std::string _url, ResponseHandler res, std::string body={} )
+    void SendRequest(Method _method, std::string _url, ResponseHandler res, std::string body = {})
     {
         // enqueue the new request
-        pending.emplace( _method, std::move(_url), std::move(res), std::move(body) );
+        pending.emplace(_method, std::move(_url), std::move(res), std::move(body));
         // if we're already handling another request, this one will be managed after
         // the others, so no need to connect (we're already connected)
-        if ( pending.size() > 1 ) return;
+        if (pending.size() > 1) return;
 
         // TODO: resolve only once inside the ctor?
         resolver.async_resolve(
-            boost::asio::ip::tcp::resolver::query{ host, port },
-            [this]( const boost::system::error_code& e, boost::asio::ip::tcp::resolver::iterator i )
+            boost::asio::ip::tcp::resolver::query{host, port},
+            [this](const boost::system::error_code& e, boost::asio::ip::tcp::resolver::iterator i)
             {
-                if ( e ) CallBack( e );
-                else Connect( i );
-            }
-        );
+                if (e)
+                    CallBack(e);
+                else
+                    Connect(i);
+            });
     }
 
 private:
-
     struct Request
     {
-        Request(Method _method, std::string _url, ResponseHandler h, std::string _body={}) :
-            method(_method), url(std::move(_url)), body(std::move(_body)), onResponse(std::move(h))
-        {}
+        Request(Method _method, std::string _url, ResponseHandler h, std::string _body = {})
+            : method(_method), url(std::move(_url)), body(std::move(_body)), onResponse(std::move(h))
+        {
+        }
 
         const Method method;
         const std::string url;
@@ -105,16 +107,19 @@ private:
         const ResponseHandler onResponse;
     };
 
-    void CallBack( const boost::system::error_code& e, boost::beast::http::status status={}, const std::string& reason={}, const std::string& body={} )
+    void CallBack(
+        const boost::system::error_code& e, boost::beast::http::status status = {}, const std::string& reason = {},
+        const std::string& body = {})
     {
-        assert( !pending.empty() );
+        assert(!pending.empty());
 
-        pending.front().onResponse( e, static_cast<std::underlying_type_t<boost::beast::http::status>>(status), reason, body );
+        pending.front().onResponse(
+            e, static_cast<std::underlying_type_t<boost::beast::http::status>>(status), reason, body);
         pending.pop();
 
-        if ( pending.empty() )
+        if (pending.empty())
         {
-            if ( socket.is_open() )
+            if (socket.is_open())
             {
                 socket.cancel();
                 socket.close();
@@ -126,22 +131,23 @@ private:
         }
     }
 
-    void Connect( boost::asio::ip::tcp::resolver::iterator i )
+    void Connect(boost::asio::ip::tcp::resolver::iterator i)
     {
         boost::asio::async_connect(
             socket,
             i,
             [this](boost::system::error_code e, boost::asio::ip::tcp::resolver::iterator)
             {
-                if ( e ) CallBack( e );
-                else Write();
-            }
-        );
+                if (e)
+                    CallBack(e);
+                else
+                    Write();
+            });
     }
 
     void Write()
     {
-        assert( !pending.empty() );
+        assert(!pending.empty());
         auto method = pending.front().method;
         auto url = pending.front().url;
         auto body = pending.front().body;
@@ -156,37 +162,37 @@ private:
         request.version(11);
         request.method(ToBeast(method));
         request.target(url);
-        request.set( boost::beast::http::field::host, host + ":" + port );
-        request.set( boost::beast::http::field::authorization, auth );
-        request.set( boost::beast::http::field::user_agent, "aricpp" );
-        request.set( boost::beast::http::field::content_type, "application/json" );
+        request.set(boost::beast::http::field::host, host + ":" + port);
+        request.set(boost::beast::http::field::authorization, auth);
+        request.set(boost::beast::http::field::user_agent, "aricpp");
+        request.set(boost::beast::http::field::content_type, "application/json");
         request.body() = body;
-	    request.prepare_payload();
-        boost::beast::http::async_write( 
+        request.prepare_payload();
+        boost::beast::http::async_write(
             socket,
-            request, 
+            request,
             [this](boost::system::error_code e, std::size_t bytes_transferred)
             {
                 boost::ignore_unused(bytes_transferred);
-                if ( e ) CallBack( e );
-                else ReadResponse(); // no error, go on with read
-            }
-        );
+                if (e)
+                    CallBack(e);
+                else
+                    ReadResponse(); // no error, go on with read
+            });
     }
 
     void ReadResponse()
     {
 #ifdef ARICPP_HTTP_TIMEOUT
         using namespace std::chrono_literals;
-        timer.expires_from_now( 500ms );
+        timer.expires_from_now(500ms);
         timer.async_wait(
             [](boost::system::error_code e)
             {
                 if (e) return;
                 std::cerr << "No answer received!\n";
                 assert(false);
-            }
-        );
+            });
 #endif
         boost::beast::http::async_read(
             socket,
@@ -198,24 +204,22 @@ private:
 #ifdef ARICPP_HTTP_TIMEOUT
                 timer.cancel();
 #endif
-                if ( e )
-                    CallBack( e );
+                if (e)
+                    CallBack(e);
                 else
                 {
 #ifdef ARICPP_TRACE_HTTP
                     std::cout << "### <= " << resp.result() << " " << resp.reason() << '\n';
-                    if ( !resp.body().empty() )
-                        std::cout << "       " << resp.body() << '\n';
+                    if (!resp.body().empty()) std::cout << "       " << resp.body() << '\n';
 #endif
-                    CallBack( e, resp.result(), resp.reason().to_string(), resp.body() );
+                    CallBack(e, resp.result(), resp.reason().to_string(), resp.body());
                 }
 
                 // in any case, clear the buffer and the response
                 buffer.consume(buffer.size());
                 boost::beast::http::response<boost::beast::http::string_body> emptyResp;
                 boost::beast::http::swap(resp, emptyResp);
-            }
-        );
+            });
     }
 
     boost::asio::io_service& ios;

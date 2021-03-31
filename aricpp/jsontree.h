@@ -30,13 +30,12 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_JSONTREE_H_
 #define ARICPP_JSONTREE_H_
 
 #include <iostream>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 namespace aricpp
 {
@@ -58,29 +57,33 @@ inline JsonTree FromJson(const std::string& s)
     boost::property_tree::ptree tree;
     std::stringstream ss;
     ss << s;
-    boost::property_tree::read_json( ss, tree );
+    boost::property_tree::read_json(ss, tree);
     return tree;
 }
 
-template <typename T> T Get(const JsonTree& e, const std::vector<std::string>& path)
+template<typename T>
+T Get(const JsonTree& e, const std::vector<std::string>& path)
 {
-    assert( !path.empty() );
+    assert(!path.empty());
     std::string s;
-    for (const auto &piece : path) s += piece + '.';
+    for (const auto& piece : path)
+        s += piece + '.';
     s.pop_back();
     return e.get<T>(s);
 }
 
-template <> inline std::vector<std::string> Get(const JsonTree& e, const std::vector<std::string>& path)
+template<>
+inline std::vector<std::string> Get(const JsonTree& e, const std::vector<std::string>& path)
 {
-    assert( !path.empty() );
+    assert(!path.empty());
     std::string s;
-    for (const auto &piece : path) s += piece + '.';
+    for (const auto& piece : path)
+        s += piece + '.';
     s.pop_back();
 
     std::vector<std::string> result;
     const auto& args = e.get_child(s);
-    for (auto& child: args)
+    for (auto& child : args)
         result.push_back(child.second.get_value<std::string>());
 
     return result;

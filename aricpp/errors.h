@@ -30,10 +30,8 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_ERRORS_H_
 #define ARICPP_ERRORS_H_
-
 
 namespace aricpp
 {

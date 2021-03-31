@@ -30,7 +30,6 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_TERMINATIONDTMF_H_
 #define ARICPP_TERMINATIONDTMF_H_
 
@@ -58,16 +57,21 @@ class TerminationDtmf : public TerminationDtmfBase<void>
 {
 public:
     operator std::string() const { return value; }
+
 private:
     friend struct TerminationDtmfBase<void>;
     TerminationDtmf(const char* v) : value(v) {}
     const std::string value;
 };
 
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::none{"none"};
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::any{"any"};
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::asterisk{"*"};
-template<class Dummy> const TerminationDtmf TerminationDtmfBase<Dummy>::pound{"#"};
+template<class Dummy>
+const TerminationDtmf TerminationDtmfBase<Dummy>::none{"none"};
+template<class Dummy>
+const TerminationDtmf TerminationDtmfBase<Dummy>::any{"any"};
+template<class Dummy>
+const TerminationDtmf TerminationDtmfBase<Dummy>::asterisk{"*"};
+template<class Dummy>
+const TerminationDtmf TerminationDtmfBase<Dummy>::pound{"#"};
 
 } // namespace aricpp
 

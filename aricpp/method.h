@@ -30,12 +30,11 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_METHOD_H_
 #define ARICPP_METHOD_H_
 
-#include <boost/beast/http/verb.hpp>
 #include <string>
+#include <boost/beast/http/verb.hpp>
 
 namespace aricpp
 {
@@ -51,27 +50,19 @@ enum class Method
 /// Converts the Method enum class to a string
 inline std::string ToString(Method m)
 {
-    static const char* d[] =
-    {
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE"
-    };
-    return d[ static_cast<std::underlying_type_t<Method>>(m) ];
+    static const char* d[] = {"GET", "POST", "PUT", "DELETE"};
+    return d[static_cast<std::underlying_type_t<Method>>(m)];
 }
 
 /// Converts the Method enum class to the equivalent Beast enum
 inline boost::beast::http::verb ToBeast(Method m)
 {
-    static const boost::beast::http::verb d[] =
-    {
+    static const boost::beast::http::verb d[] = {
         boost::beast::http::verb::get,
         boost::beast::http::verb::post,
         boost::beast::http::verb::put,
-        boost::beast::http::verb::delete_
-    };
-    return d[ static_cast<std::underlying_type_t<Method>>(m) ];
+        boost::beast::http::verb::delete_};
+    return d[static_cast<std::underlying_type_t<Method>>(m)];
 }
 
 } // namespace aricpp

@@ -30,7 +30,6 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_URLENCODE_H_
 #define ARICPP_URLENCODE_H_
 
@@ -50,18 +49,20 @@ inline std::string UrlEncode(const std::string& value)
     escaped.fill('0');
     escaped << hex;
 
-    for (string::const_iterator i = value.begin(), n = value.end(); i != n; ++i) {
+    for (string::const_iterator i = value.begin(), n = value.end(); i != n; ++i)
+    {
         string::value_type c = (*i);
 
         // Keep alphanumeric and other accepted characters intact
-        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
+        {
             escaped << c;
             continue;
         }
 
         // Any other characters are percent-encoded
         escaped << uppercase;
-        escaped << '%' << setw(2) << int( static_cast<unsigned char>(c) );
+        escaped << '%' << setw(2) << int(static_cast<unsigned char>(c));
         escaped << nouppercase;
     }
 

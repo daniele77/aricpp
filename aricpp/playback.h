@@ -30,13 +30,12 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_PLAYBACK_H_
 #define ARICPP_PLAYBACK_H_
 
 #include <string>
-#include "proxy.h"
 #include "client.h"
+#include "proxy.h"
 
 namespace aricpp
 {
@@ -56,24 +55,21 @@ public:
     {
         if (id.empty()) return Proxy::CreateEmpty();
 
-        return Proxy::Command(Method::delete_, "/ari/playbacks/"+id, client);
+        return Proxy::Command(Method::delete_, "/ari/playbacks/" + id, client);
     }
+
 private:
     friend class Channel;
     friend class Bridge;
     friend class AriModel;
 
-    Playback(Client* _client) : 
-        id(NextId()), client(_client)
-    {}
+    Playback(Client* _client) : id(NextId()), client(_client) {}
 
-    Playback(const std::string& _id, Client* _client) : 
-        id(_id), client(_client)
-    {}
+    Playback(const std::string& _id, Client* _client) : id(_id), client(_client) {}
 
     static std::string NextId()
     {
-        static unsigned long  long nextId = 0;
+        static unsigned long long nextId = 0;
         return "aricpp-p" + std::to_string(nextId++);
     }
 
@@ -81,15 +77,9 @@ private:
     Client* client;
 };
 
-inline bool operator == (const Playback& lhs, const Playback& rhs)
-{
-    return lhs.Id() == rhs.Id();
-}
+inline bool operator==(const Playback& lhs, const Playback& rhs) { return lhs.Id() == rhs.Id(); }
 
-inline bool operator != (const Playback& lhs, const Playback& rhs)
-{
-    return lhs.Id() != rhs.Id();
-}
+inline bool operator!=(const Playback& lhs, const Playback& rhs) { return lhs.Id() != rhs.Id(); }
 
 } // namespace aricpp
 
