@@ -98,8 +98,8 @@ public:
 
     Channel(const Channel& rhs) = delete;
     Channel& operator=(const Channel& rhs) = delete;
-    Channel(Channel&& rhs) = default;
-    Channel& operator=(Channel&& rhs) = default;
+    Channel(Channel&& rhs) = delete;
+    Channel& operator=(Channel&& rhs) = delete;
     
     ~Channel()
     {
