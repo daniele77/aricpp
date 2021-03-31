@@ -30,17 +30,17 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_BRIDGE_H_
 #define ARICPP_BRIDGE_H_
 
 #include <string>
+#include "channel.h"
 #include "client.h"
-#include "proxy.h"
-#include "terminationdtmf.h"
 #include "method.h"
-#include "recording.h"
 #include "playback.h"
+#include "proxy.h"
+#include "recording.h"
+#include "terminationdtmf.h"
 #include "urlencode.h"
 
 namespace aricpp
@@ -49,7 +49,6 @@ namespace aricpp
 class Bridge
 {
 public:
-
     ///////////////////////////////////////////////////////////////
     // Role smart enum
 
@@ -68,6 +67,7 @@ public:
     {
     public:
         operator std::string() const { return value; }
+
     private:
         friend struct RoleBase<void>;
         Role(const char* v) : value(v) {}
@@ -95,11 +95,12 @@ public:
     {
     public:
         operator std::string() const { return value; }
-        Type operator | (Type rhs) const
+        Type operator|(Type rhs) const
         {
             Type result(value + ',' + static_cast<std::string>(rhs));
             return result;
         }
+
     private:
         friend struct TypeBase<void>;
         Type(const char* v) : value(v) {}
@@ -114,7 +115,7 @@ public:
     Bridge(Bridge&& rhs) : id(rhs.id), client(rhs.client) { rhs.id.clear(); }
     Bridge& operator=(Bridge&& rhs)
     {
-        if ( &rhs != this )
+        if (&rhs != this)
         {
             id = rhs.id;
             client = rhs.client;
@@ -126,22 +127,21 @@ public:
     /// Destroy the object and the asterisk bridge
     ~Bridge() { Destroy(); }
 
-    Proxy& Add(const Channel& ch, bool mute=false, Role role=Role::participant)
+    Proxy& Add(const Channel& ch, bool mute = false, Role role = Role::participant)
     {
         return Proxy::Command(
             Method::post,
-            "/ari/bridges/" + id +
-            "/addChannel?channel=" + ch.Id() +
-            "&mute=" + (mute ? "true" : "false") +
-            "&role=" + static_cast<std::string>(role),
-            client
-        );
+            "/ari/bridges/" + id + "/addChannel?" +    //
+                "channel=" + ch.Id() +                 //
+                "&mute=" + (mute ? "true" : "false") + //
+                "&role=" + static_cast<std::string>(role),
+            client);
     }
 
     Proxy& Add(std::initializer_list<const Channel*> chs)
     {
         std::string req = "/ari/bridges/" + id + "/addChannel?channel=";
-        for (auto ch=chs.begin(); ch!=chs.end(); ++ch)
+        for (auto ch = chs.begin(); ch != chs.end(); ++ch)
             req += (*ch)->Id() + ',';
         req.pop_back(); // removes trailing ','
         return Proxy::Command(Method::post, std::move(req), client);
@@ -149,68 +149,58 @@ public:
 
     Proxy& Remove(const Channel& ch)
     {
-        return Proxy::Command(
-            Method::post,
-            "/ari/bridges/" + id +
-            "/removeChannel?channel=" + ch.Id(),
-            client
-        );
+        return Proxy::Command(Method::post, "/ari/bridges/" + id + "/removeChannel?channel=" + ch.Id(), client);
     }
 
-    Proxy& StartMoh(const std::string& mohClass={})
+    Proxy& StartMoh(const std::string& mohClass = {})
     {
         std::string query = "/ari/bridges/" + id + "/moh";
-        if ( !mohClass.empty() ) query += "?mohClass" + mohClass;
+        if (!mohClass.empty()) query += "?mohClass" + mohClass;
         return Proxy::Command(Method::post, std::move(query), client);
     }
 
-    Proxy& StopMoh()
-    {
-        return Proxy::Command(Method::delete_, "/ari/bridges/" + id + "/moh", client);
-    }
+    Proxy& StopMoh() { return Proxy::Command(Method::delete_, "/ari/bridges/" + id + "/moh", client); }
 
-    ProxyPar<Playback>& Play(const std::string& media, const std::string& lang={},
-                             int offsetms=-1, int skipms=-1) const
+    ProxyPar<Playback>&
+    Play(const std::string& media, const std::string& lang = {}, int offsetms = -1, int skipms = -1) const
     {
         Playback playback(client);
         return ProxyPar<Playback>::Command(
             Method::post,
-            "/ari/bridges/"+id+"/play?"
-            "media=" + UrlEncode(media) +
-            ( lang.empty() ? "" : "&lang=" + lang ) +
-            "&playbackId=" + playback.Id() +
-            ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
-            ( skipms < 0 ? "" : "&skipms=" + std::to_string(skipms) ),
+            "/ari/bridges/" + id + "/play?" +                                   //
+                "media=" + UrlEncode(media) +                                   //
+                (lang.empty() ? "" : "&lang=" + lang) +                         //
+                "&playbackId=" + playback.Id() +                                //
+                (offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms)) + //
+                (skipms < 0 ? "" : "&skipms=" + std::to_string(skipms)),        //
             client,
-            playback
-        );
+            playback);
     }
 
-    ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
-                  int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
-                  const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
+    ProxyPar<Recording>& Record(
+        const std::string& name, const std::string& format, int maxDurationSeconds = -1, int maxSilenceSeconds = -1,
+        const std::string& ifExists = {}, bool beep = false, TerminationDtmf terminateOn = TerminationDtmf::none) const
     {
         Recording recording(name, client);
         return ProxyPar<Recording>::Command(
             Method::post,
-            "/ari/bridges/"+id+"/record?"
-            "name=" + UrlEncode(name) +
-            "&format=" + format +
-            "&terminateOn=" + static_cast<std::string>(terminateOn) +
-            ( beep ? "&beep=true" : "&beep=false" ) +
-            ( ifExists.empty() ? "" : "&ifExists=" + ifExists ) +
-            ( maxDurationSeconds < 0 ? "" : "&maxDurationSeconds=" + std::to_string(maxDurationSeconds) ) +
-            ( maxSilenceSeconds < 0 ? "" : "&maxSilenceSeconds=" + std::to_string(maxSilenceSeconds) ),
+            "/ari/bridges/" + id + "/record?" +                           //
+                "name=" + UrlEncode(name) +                               //
+                "&format=" + format +                                     //
+                "&terminateOn=" + static_cast<std::string>(terminateOn) + //
+                (beep ? "&beep=true" : "&beep=false") +                   //
+                (ifExists.empty() ? "" : "&ifExists=" + ifExists) +       //
+                (maxDurationSeconds < 0 ? "" : "&maxDurationSeconds=" + std::to_string(maxDurationSeconds)) +
+                (maxSilenceSeconds < 0 ? "" : "&maxSilenceSeconds=" + std::to_string(maxSilenceSeconds)),
             client,
-            recording
-        );
+            recording);
     }
 
     Proxy& Destroy()
     {
-        if ( IsDead() ) return Proxy::CreateEmpty();
+        if (IsDead()) return Proxy::CreateEmpty();
         isDead = true;
-        return Proxy::Command(Method::delete_, "/ari/bridges/"+id, client);
+        return Proxy::Command(Method::delete_, "/ari/bridges/" + id, client);
     }
 
     bool IsDead() const { return isDead; }
@@ -218,12 +208,12 @@ public:
     const std::string& Id() const { return id; }
 
 private:
-
     friend class AriModel;
 
-    Bridge(const std::string& _id, const std::string& _technology, const std::string& _bridge_type, Client* _client) :
-        id(_id), technology(_technology), bridge_type(_bridge_type), client(_client)
-    {}
+    Bridge(const std::string& _id, const std::string& _technology, const std::string& _bridge_type, Client* _client)
+        : id(_id), technology(_technology), bridge_type(_bridge_type), client(_client)
+    {
+    }
 
     std::string id;
     std::string technology;
@@ -232,14 +222,21 @@ private:
     bool isDead = false;
 };
 
-template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::announcer{"announcer"};
-template<class Dummy> const Bridge::Role Bridge::RoleBase<Dummy>::participant{"participant"};
+template<class Dummy>
+const Bridge::Role Bridge::RoleBase<Dummy>::announcer{"announcer"};
+template<class Dummy>
+const Bridge::Role Bridge::RoleBase<Dummy>::participant{"participant"};
 
-template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::mixing{"mixing"};
-template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::holding{"holding"};
-template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::dtmf_events{"dtmf_events"};
-template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::proxy_media{"proxy_media"};
-template<class Dummy> const Bridge::Type Bridge::TypeBase<Dummy>::video_sfu{"video_sfu"};
+template<class Dummy>
+const Bridge::Type Bridge::TypeBase<Dummy>::mixing{"mixing"};
+template<class Dummy>
+const Bridge::Type Bridge::TypeBase<Dummy>::holding{"holding"};
+template<class Dummy>
+const Bridge::Type Bridge::TypeBase<Dummy>::dtmf_events{"dtmf_events"};
+template<class Dummy>
+const Bridge::Type Bridge::TypeBase<Dummy>::proxy_media{"proxy_media"};
+template<class Dummy>
+const Bridge::Type Bridge::TypeBase<Dummy>::video_sfu{"video_sfu"};
 
 } // namespace aricpp
 
