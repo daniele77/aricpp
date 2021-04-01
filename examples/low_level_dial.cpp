@@ -38,7 +38,7 @@
 #include <string>
 #include <boost/program_options.hpp>
 
-#include "../aricpp/client.h"
+#include "../include/aricpp/client.h"
 
 /*
 

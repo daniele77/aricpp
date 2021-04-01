@@ -30,14 +30,14 @@ Extract the archive wherever you want.
 Now you must only remember to specify the aricpp and boost paths when
 compiling your source code.
 
-## Compilation of the samples
+## Compilation of the examples
 
-You can find some examples in the directory "samples".
-Each .cpp file corresponds to an executable. You can compile each sample by including
+You can find some examples in the directory "examples".
+Each .cpp file corresponds to an executable. You can compile each example by including
 aricpp and boost header files and linking boost system, boost program options
 (and pthread on linux).
 
-In the directory samples you can also find:
+In the directory examples you can also find:
 
 * a GNU make file (Makefile)
 * a Windows nmake file (makefile.win)
@@ -64,7 +64,7 @@ Set the environment variable BOOST. Then, from a visual studio console, use the 
 ### Visual Studio solution
 
 Set the environment variable BOOST. Then, open the file
-`aricpp/samples/aricpp_samples/aricpp_samples.sln`
+`aricpp/examples/aricpp_samples/aricpp_samples.sln`
 
 ## Compilation of the Doxygen documentation
 
@@ -187,7 +187,7 @@ client.Connect( [&](boost::system::error_code e){
 ios.run();
 ```
 
-See the sample `high_level_dial.cpp` (located in directory `samples`) to have a
+See the example `high_level_dial.cpp` (located in directory `examples`) to have a
 full working example.
 
 The high and low level interface can coexist. Being the high-level interface still

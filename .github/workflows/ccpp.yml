@@ -23,5 +23,5 @@ jobs:
         sudo ./b2 install
     - name: make
       run: |
-        cd samples
+        cd examples
         make

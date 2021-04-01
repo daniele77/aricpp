@@ -30,27 +30,22 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
-#include <boost/program_options.hpp>
+#include <iostream>
 #include <string>
-#include <thread>
-#include "../aricpp/client.h"
-#include "../aricpp/urlencode.h"
+#include <boost/program_options.hpp>
+#include "../include/aricpp/client.h"
 
-using namespace std;
 using namespace aricpp;
 
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
     try
     {
-        string host = "localhost";
-        string port = "8088";
-        string username = "asterisk";
-        string password = "asterisk";
-        string application = "attendant";
-        string to = "291";
-        string from = "290";
+
+        std::string host = "localhost";
+        std::string port = "8088";
+        std::string username = "asterisk";
+        std::string password = "asterisk";
 
         namespace po = boost::program_options;
         po::options_description desc("Allowed options");
@@ -62,9 +57,6 @@ int main( int argc, char* argv[] )
             ("port,P", po::value(&port), "port of the ARI server [8088]")
             ("username,u", po::value(&username), "username of the ARI account on the server [asterisk]")
             ("password,p", po::value(&password), "password of the ARI account on the server [asterisk]")
-            ("application,a", po::value(&application), "stasis application to use [attendant]")
-            ("from,f", po::value(&from), "source extension [290]")
-            ("to,t", po::value(&to), "destination extension [291]")
         ;
 
         po::variables_map vm;
@@ -79,58 +71,55 @@ int main( int argc, char* argv[] )
 
         if (vm.count("version"))
         {
-            cout << "This is chat application v. 1.0, part of aricpp library\n";
+            std::cout << "This is query application v. 1.0, part of aricpp library\n";
             return 0;
         }
 
         boost::asio::io_service ios;
+        HttpClient client(ios, host, port, username, password);
 
-        Client client( ios, host, port, username, password, application );
-        client.Connect( [&](boost::system::error_code ){
-
-            client.OnEvent( "TextMessageReceived", [&](const JsonTree& e){
-                auto from = Get<std::string>(e, {"message", "from"});
-                auto to = Get<std::string>(e, {"message", "to"});
-                auto msg = Get<std::string>(e, {"message", "body"});
-
-                cout << "> Message from: " << from << " (for: " << to << "):\n";
-                cout << msg << "\n\n";
-            });
-        });
-
-        auto inputReader = [&]()
+        std::vector<std::string> requests
         {
-            string msg;
-            while (true)
-            {
-                cout << "> Enter you message (quit to exit):\n";
-                getline( std::cin, msg );
-                if (msg == "exit" || msg == "quit") break;
-                if (msg.empty()) continue;
-                cout << "Sending " << msg << '\n';
-                msg = UrlEncode(msg);
-                auto url = "/ari/endpoints/sendMessage?to=sip:"+to+"&from=sip:"+from+"&body="+msg;
-                auto sendRequest =
-                    [&client,url]()
-                    {
-                        client.RawCmd(Method::put, url, [](auto,auto,auto,auto){});
-                    };
-                ios.post( sendRequest );
-            }
-            cout << "Exiting application\n";
-            ios.stop();
+            "/ari/asterisk/info",
+            "/ari/asterisk/modules",
+            "/ari/asterisk/logging",
+            "/ari/applications",
+            "/ari/bridges",
+            "/ari/channels",
+            "/ari/deviceStates",
+            "/ari/endpoints",
+            "/ari/mailboxes",
+            "/ari/recordings/stored",
+            "/ari/sounds"
         };
-        thread readerThread( inputReader );
+
+        std::for_each(
+            requests.begin(),
+            requests.end(),
+            [&client](auto& request)
+            {
+                client.SendRequest(
+                    Method::get,
+                    request,
+                    [&request](auto error, auto state, auto reason, auto body)
+                    {
+                        std::cout << "\nREQUEST " << request << ":\n"
+                                  << "error: " << error.message() << '\n'
+                                  << "state: " << state << '\n'
+                                  << "reason: " << reason << '\n'
+                                  << body << '\n';
+                    });
+            });
 
         ios.run();
 
-        readerThread.join();
-
+        return 0;
     }
-    catch ( const exception& e )
+    catch (const std::exception& e)
     {
-        cerr << "Exception in app: " << e.what() << ". Aborting\n";
+        std::cerr << "Error: " << e.what() << '\n';
         return -1;
     }
+
     return 0;
 }

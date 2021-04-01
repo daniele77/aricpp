@@ -23,12 +23,12 @@
 *.exe
 *.out
 *.app
-samples/chat
-samples/high_level_dial
-samples/low_level_dial
-samples/query
-samples/holding_bridge
-samples/play_and_record
+examples/chat
+examples/high_level_dial
+examples/low_level_dial
+examples/query
+examples/holding_bridge
+examples/play_and_record
 
 
 # Project files

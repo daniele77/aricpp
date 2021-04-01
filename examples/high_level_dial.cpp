@@ -38,10 +38,10 @@
 #include <vector>
 #include <boost/program_options.hpp>
 
-#include "../aricpp/arimodel.h"
-#include "../aricpp/bridge.h"
-#include "../aricpp/channel.h"
-#include "../aricpp/client.h"
+#include "../include/aricpp/arimodel.h"
+#include "../include/aricpp/bridge.h"
+#include "../include/aricpp/channel.h"
+#include "../include/aricpp/client.h"
 
 using namespace aricpp;
 using namespace std;

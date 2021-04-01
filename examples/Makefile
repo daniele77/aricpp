@@ -30,29 +30,15 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-#define macros
-EXE_NAMES = high_level_dial.exe low_level_dial.exe chat.exe query.exe holding_bridge.exe play_and_record.exe
-DIR_INCLUDE = /I..\.. /I%BOOST%
-DIR_LINK = %BOOST%\stage\lib
-COMPILE_FLAGS = /nologo /MD /EHsc /D_WIN32_WINNT=0x0501 /DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
-CPPFLAGS = $(COMPILE_FLAGS) $(DIR_INCLUDE) /link /LIBPATH:$(DIR_LINK)
-RM = del /F /Q 2> nul
+override CXXFLAGS += -O3 -Werror -Wall -Wextra -Wpedantic -std=c++1y -I..
+override LDLIBS += -lboost_program_options -lboost_system -lpthread
 
-.PHONY: all apps clean
- 
-# clean and build samples
-all: clean apps
+EXAMPLES := low_level_dial high_level_dial chat query holding_bridge play_and_record
 
-.cpp.exe:
-	@echo Compiling and linking: $<
-	$(CPP) $< $(CPPFLAGS)
+.PHONY: clean all
 
-# applications
-apps: $(EXE_NAMES)
-    
-# delete output files
+all: $(EXAMPLES)
+
 clean:
-	@-$(RM) *.obj
-	@-$(RM) $(EXE_NAMES)
-
+	@- $(RM) *.o *~ core $(EXAMPLES)
 
