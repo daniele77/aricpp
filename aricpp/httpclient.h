@@ -34,13 +34,14 @@
 #ifndef ARICPP_HTTPCLIENT_H_
 #define ARICPP_HTTPCLIENT_H_
 
-#include <string>
-#include <queue>
+#include "basicauth.h"
+#include "method.h"
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include "basicauth.h"
-#include "method.h"
+#include <queue>
+#include <string>
+#include <utility>
 
 //#define ARICPP_TRACE_HTTP
 //#define ARICPP_HTTP_TIMEOUT
@@ -57,7 +58,7 @@ class HttpClient
 public:
     using ResponseHandler = std::function< void( const boost::system::error_code&, int status, const std::string& reason, const std::string& body ) >;
 
-    HttpClient( boost::asio::io_service& _ios, std::string _host, std::string _port, std::string user, std::string password ) :
+    HttpClient( boost::asio::io_service& _ios, std::string _host, std::string _port, const std::string& user, const std::string& password ) :
         ios(_ios), host(std::move(_host)), port(std::move(_port)),
         auth(GetBasicAuth(user, password)),
         resolver(ios),
@@ -71,6 +72,7 @@ public:
     HttpClient( const HttpClient& ) = delete;
     HttpClient( HttpClient&& ) = delete;
     HttpClient& operator = ( const HttpClient& ) = delete;
+    HttpClient& operator = ( HttpClient&& ) = delete;
 
     void SendRequest( Method _method, std::string _url, ResponseHandler res, std::string body={} )
     {
@@ -130,7 +132,7 @@ private:
     {
         boost::asio::async_connect(
             socket,
-            i,
+            std::move(i),
             [this](boost::system::error_code e, boost::asio::ip::tcp::resolver::iterator)
             {
                 if ( e ) CallBack( e );

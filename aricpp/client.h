@@ -66,14 +66,15 @@ public:
             std::string _user, std::string _password, std::string _application ) :
         user(std::move(_user)), password(std::move(_password)),
         application(std::move(_application)),
-        websocket(ios, host, port),
-        httpclient(ios, host, port, user, password)
+        websocket( ios, host, port ),
+        httpclient( ios, host, port, user, password )
     {}
 
     Client() = delete;
     Client( const Client& ) = delete;
     Client( Client&& ) = delete;
     Client& operator = ( const Client& ) = delete;
+    Client& operator = ( Client&& ) = delete;
 
     ~Client() noexcept
     {
@@ -108,7 +109,7 @@ public:
     }
 
     template <typename ResponseHandler>
-    void RawCmd(Method method, const std::string& url, ResponseHandler&& Response, std::string body={})
+    void RawCmd(Method method, const std::string& url, ResponseHandler&& Response, const std::string& body={})
     {
         httpclient.SendRequest(method, url, std::forward<ResponseHandler>(Response), body);
     }

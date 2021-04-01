@@ -50,9 +50,7 @@ inline std::string UrlEncode(const std::string& value)
     escaped.fill('0');
     escaped << hex;
 
-    for (string::const_iterator i = value.begin(), n = value.end(); i != n; ++i) {
-        string::value_type c = (*i);
-
+    for (char c : value) {
         // Keep alphanumeric and other accepted characters intact
         if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
             escaped << c;

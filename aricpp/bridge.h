@@ -34,14 +34,16 @@
 #ifndef ARICPP_BRIDGE_H_
 #define ARICPP_BRIDGE_H_
 
-#include <string>
 #include "client.h"
-#include "proxy.h"
-#include "terminationdtmf.h"
+#include "channel.h"
 #include "method.h"
-#include "recording.h"
 #include "playback.h"
+#include "proxy.h"
+#include "recording.h"
+#include "terminationdtmf.h"
 #include "urlencode.h"
+#include <string>
+#include <utility>
 
 namespace aricpp
 {
@@ -67,10 +69,10 @@ public:
     class Role : public RoleBase<void>
     {
     public:
-        operator std::string() const { return value; }
+        explicit operator std::string() const { return value; }
     private:
         friend struct RoleBase<void>;
-        Role(const char* v) : value(v) {}
+        explicit Role(const char* v) noexcept : value(v) {}
         const std::string value;
     };
 
@@ -94,16 +96,16 @@ public:
     class Type : public TypeBase<void>
     {
     public:
-        operator std::string() const { return value; }
-        Type operator | (Type rhs) const
+        explicit operator std::string() const { return value; }
+        Type operator | (const Type& rhs) const
         {
             Type result(value + ',' + static_cast<std::string>(rhs));
             return result;
         }
     private:
         friend struct TypeBase<void>;
-        Type(const char* v) : value(v) {}
-        Type(const std::string& v) : value(v) {}
+        explicit Type(const char* v) noexcept : value(v) {}
+        explicit Type(std::string  v) noexcept : value(std::move(v)) {}
         const std::string value;
     };
 
@@ -111,8 +113,8 @@ public:
 
     Bridge(const Bridge& rhs) = delete;
     Bridge& operator=(const Bridge& rhs) = delete;
-    Bridge(Bridge&& rhs) : id(rhs.id), client(rhs.client) { rhs.id.clear(); }
-    Bridge& operator=(Bridge&& rhs)
+    Bridge(Bridge&& rhs) noexcept : id(std::move(rhs.id)), client(rhs.client) { rhs.id.clear(); }
+    Bridge& operator=(Bridge&& rhs) noexcept
     {
         if ( &rhs != this )
         {
@@ -126,7 +128,7 @@ public:
     /// Destroy the object and the asterisk bridge
     ~Bridge() { Destroy(); }
 
-    Proxy& Add(const Channel& ch, bool mute=false, Role role=Role::participant)
+    Proxy& Add(const Channel& ch, bool mute=false, const Role& role=Role::participant)
     {
         return Proxy::Command(
             Method::post,
@@ -141,10 +143,10 @@ public:
     Proxy& Add(std::initializer_list<const Channel*> chs)
     {
         std::string req = "/ari/bridges/" + id + "/addChannel?channel=";
-        for (auto ch=chs.begin(); ch!=chs.end(); ++ch)
-            req += (*ch)->Id() + ',';
+        for (auto ch : chs)
+            req += ch->Id() + ',';
         req.pop_back(); // removes trailing ','
-        return Proxy::Command(Method::post, std::move(req), client);
+        return Proxy::Command(Method::post, req, client);
     }
 
     Proxy& Remove(const Channel& ch)
@@ -161,7 +163,7 @@ public:
     {
         std::string query = "/ari/bridges/" + id + "/moh";
         if ( !mohClass.empty() ) query += "?mohClass" + mohClass;
-        return Proxy::Command(Method::post, std::move(query), client);
+        return Proxy::Command(Method::post, query, client);
     }
 
     Proxy& StopMoh()
@@ -188,7 +190,7 @@ public:
 
     ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
                   int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
-                  const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
+                  const std::string& ifExists={}, bool beep=false, const TerminationDtmf& terminateOn=TerminationDtmf::none) const
     {
         Recording recording(name, client);
         return ProxyPar<Recording>::Command(
@@ -221,8 +223,8 @@ private:
 
     friend class AriModel;
 
-    Bridge(const std::string& _id, const std::string& _technology, const std::string& _bridge_type, Client* _client) :
-        id(_id), technology(_technology), bridge_type(_bridge_type), client(_client)
+    Bridge(std::string  _id, std::string  _technology, std::string  _bridge_type, Client* _client) :
+        id(std::move(_id)), technology(std::move(_technology)), bridge_type(std::move(_bridge_type)), client(_client)
     {}
 
     std::string id;

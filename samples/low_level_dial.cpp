@@ -112,6 +112,11 @@ public:
         cout << "Call destroyed\n";
     }
 #endif
+    Call(const Call&) = delete;
+    Call(Call&&) = delete;
+    Call& operator=(const Call&) = delete;
+    Call& operator=(Call&&) = delete;
+
     void Dump() const
     {
         cout << "Call dialing=" << dialing << " dialed=" << dialed << endl;
@@ -286,6 +291,7 @@ public:
     CallContainer(const CallContainer&) = delete;
     CallContainer(CallContainer&&) = delete;
     CallContainer& operator=(const CallContainer&) = delete;
+    CallContainer& operator=(CallContainer&&) = delete;
 
 private:
 

@@ -39,15 +39,15 @@
 
 namespace aricpp
 {
-namespace
+namespace detail
 {
-    static const std::string base64_chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz"
-        "0123456789+/";
-
     inline std::string Base64Encode( const std::string& toEncode )
     {
+        static const std::string base64_chars =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"
+            "0123456789+/";
+
         std::string ret;
         std::array< unsigned char, 3 > char_array_3;
         std::array< unsigned char, 4 > char_array_4;
@@ -90,11 +90,11 @@ namespace
         return ret;
     }
 
-} // anonymous namespace
+} // namespace detail
 
 inline std::string GetBasicAuth( const std::string& user, const std::string& psw )
 {
-    return "Basic " + Base64Encode( user + ':' + psw );
+    return "Basic " + detail::Base64Encode( user + ':' + psw );
 }
 
 } // namespace aricpp

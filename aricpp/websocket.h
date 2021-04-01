@@ -40,6 +40,8 @@
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
+#include <string>
+#include <utility>
 #ifdef ARICPP_TRACE_WEBSOCKET
     #include <iostream>
 #endif
@@ -68,6 +70,7 @@ public:
     WebSocket( const WebSocket& ) = delete;
     WebSocket( WebSocket&& ) = delete;
     WebSocket& operator = ( const WebSocket& ) = delete;
+    WebSocket& operator = ( WebSocket&& ) = delete;
 
     ~WebSocket() noexcept
     {
@@ -170,7 +173,7 @@ private:
     {
         boost::asio::async_connect(
             socket,
-            i,
+            std::move(i),
             [this]( boost::system::error_code e, boost::asio::ip::tcp::resolver::iterator )
             {
                 if ( e ) onConnection( e );
@@ -223,7 +226,7 @@ private:
     ReceiveHandler onReceive;
 
     boost::asio::steady_timer pingTimer;
-    std::size_t connectionRetrySeconds;
+    std::size_t connectionRetrySeconds = 0;
 };
 
 } // namespace aricpp

@@ -34,9 +34,10 @@
 #ifndef ARICPP_RECORDING_H_
 #define ARICPP_RECORDING_H_
 
-#include <string>
-#include "proxy.h"
 #include "client.h"
+#include "proxy.h"
+#include <string>
+#include <utility>
 
 namespace aricpp
 {
@@ -96,7 +97,7 @@ private:
     friend class Channel;
     friend class Bridge;
 
-    Recording(const std::string& _name, Client* _client) : name(_name), client(_client) {}
+    Recording(std::string  _name, Client* _client) : name(std::move(_name)), client(_client) {}
 
     std::string name;
     Client* client;

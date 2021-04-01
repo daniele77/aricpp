@@ -34,9 +34,10 @@
 #ifndef ARICPP_PLAYBACK_H_
 #define ARICPP_PLAYBACK_H_
 
-#include <string>
-#include "proxy.h"
 #include "client.h"
+#include "proxy.h"
+#include <string>
+#include <utility>
 
 namespace aricpp
 {
@@ -63,12 +64,12 @@ private:
     friend class Bridge;
     friend class AriModel;
 
-    Playback(Client* _client) : 
+    explicit Playback(Client* _client) : 
         id(NextId()), client(_client)
     {}
 
-    Playback(const std::string& _id, Client* _client) : 
-        id(_id), client(_client)
+    Playback(std::string _id, Client* _client) : 
+        id(std::move(_id)), client(_client)
     {}
 
     static std::string NextId()

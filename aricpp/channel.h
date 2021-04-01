@@ -34,13 +34,14 @@
 #ifndef ARICPP_CHANNEL_H_
 #define ARICPP_CHANNEL_H_
 
-#include <string>
 #include "client.h"
-#include "proxy.h"
-#include "terminationdtmf.h"
-#include "recording.h"
 #include "playback.h"
+#include "proxy.h"
+#include "recording.h"
+#include "terminationdtmf.h"
 #include "urlencode.h"
+#include <string>
+#include <utility>
 
 #define ARICPP_DEPRECATED_API
 
@@ -86,10 +87,10 @@ public:
     class Direction : public DirectionBase<void>
     {
     public:
-        operator std::string() const { return value; }
+        explicit operator std::string() const { return value; }
     private:
         friend struct DirectionBase<void>;
-        Direction(const char* v) : value(v) {}
+        explicit Direction(const char* v) noexcept : value(v) {}
         const std::string value;
     };
 
@@ -98,15 +99,15 @@ public:
 
     Channel(const Channel& rhs) = delete;
     Channel& operator=(const Channel& rhs) = delete;
-    Channel(Channel&& rhs) = default;
-    Channel& operator=(Channel&& rhs) = default;
+    Channel(Channel&& rhs) = delete;
+    Channel& operator=(Channel&& rhs) = delete;
     
     ~Channel()
     {
         Hangup();
     }
 
-    Channel(Client& _client, const std::string _id, const std::string& _state = {}) :
+    Channel(Client& _client, const std::string& _id, const std::string& _state = {}) :
         id(_id), client(&_client)
     {
         StateChanged(_state);
@@ -132,7 +133,7 @@ public:
         return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/ring", client);
     }
 
-    Proxy& Mute(Direction dir=Direction::both) const
+    Proxy& Mute(const Direction& dir=Direction::both) const
     {
         return Proxy::Command(
             Method::post,
@@ -142,7 +143,7 @@ public:
         );
     }
 
-    Proxy& Unmute(Direction dir=Direction::both) const
+    Proxy& Unmute(const Direction& dir=Direction::both) const
     {
         return Proxy::Command(
             Method::delete_,
@@ -176,7 +177,7 @@ public:
     {
         std::string query = "/ari/channels/"+id+"/moh";
         if (!mohClass.empty()) query += "?mohClass=" + mohClass;
-        return Proxy::Command(Method::post, std::move(query), client);
+        return Proxy::Command(Method::post, query, client);
     }
 
     Proxy& StopMoh() const
@@ -205,7 +206,7 @@ public:
         const std::string& endpoint,
         const std::string& application,
         const std::string& callerId,
-        std::string variables={}
+        const std::string& variables={}
     ) const
     {
         return Dial(endpoint, application, callerId, variables);
@@ -227,10 +228,9 @@ public:
         const std::string& endpoint,
         const std::string& application,
         const std::string& callerId,
-        std::string variables={}
+        const std::string& variables={}
     ) const
     {
-        if (!variables.empty()) variables = "{\"variables\":"+variables+"}";
         return Proxy::Command(
             Method::post,
             "/ari/channels?"
@@ -241,7 +241,7 @@ public:
             "&timeout=-1"
             "&appArgs=internal",
             client,
-            std::move(variables) // now http body :-)
+            variables.empty() ? variables : "{\"variables\":"+variables+"}" // now http body :-)
         );
     }
 
@@ -323,7 +323,7 @@ public:
 
     ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
                   int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
-                  const std::string& ifExists={}, bool beep=false, TerminationDtmf terminateOn=TerminationDtmf::none) const
+                  const std::string& ifExists={}, bool beep=false, const TerminationDtmf& terminateOn=TerminationDtmf::none) const
     {
         Recording recording(name, client);
         return ProxyPar<Recording>::Command(
@@ -346,17 +346,17 @@ public:
         std::string query = "/ari/channels/" + id + "/variable?"
                                   "variable=" + UrlEncode(var);
         if (!value.empty()) query += "&value=" + UrlEncode(value);
-        return Proxy::Command(Method::post, std::move(query), client);
+        return Proxy::Command(Method::post, query, client);
     }
 
     ProxyPar<std::string>& GetVar(const std::string& var) const
     {
         const std::string query = "/ari/channels/"+id+"/variable";
-        const std::string body = "{\"variable\":\""+var+"\"}";
-        return ProxyPar<std::string>::Command(Method::get, std::move(query), client, std::move(body));
+        const std::string body = R"({"variable":")"+var+"\"}";
+        return ProxyPar<std::string>::Command(Method::get, query, client, body);
     }
 
-    Proxy& Snoop(const std::string& app, Direction spy=Direction::none, Direction whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
+    Proxy& Snoop(const std::string& app, const Direction& spy=Direction::none, const Direction& whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
     {
         return Proxy::Command(
             Method::post,
@@ -476,7 +476,7 @@ private:
         cause=_cause;
     }
 
-    const std::string id;
+    std::string id;
     Client* client;
     bool dead = false;
     State state = State::unknown;

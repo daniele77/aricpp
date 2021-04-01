@@ -34,13 +34,14 @@
 #ifndef ARICPP_ARIMODEL_H_
 #define ARICPP_ARIMODEL_H_
 
-#include <memory>
+#include "bridge.h"
+#include "channel.h"
+#include "client.h"
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include "client.h"
-#include "channel.h"
-#include "bridge.h"
+#include <utility>
 
 namespace aricpp
 {
@@ -70,14 +71,14 @@ public:
     using PlaybackHandler = std::function<void(const Playback&)>;
     using StasisStartedHandler = std::function<void(ChannelPtr, bool external)>;
 
-    void OnChannelCreated(ChHandler handler) { chCreated = handler; }
-    void OnChannelDestroyed(ChHandler handler) { chDestroyed = handler; }
-    void OnChannelStateChanged(ChHandler handler) { chStateChanged = handler; }
-    void OnChannelVarSet(ChVarSetHandler handler) { chVarSet = handler; }
-    void OnChannelDtmfReceived(ChDtmfHandler handler) { chDtmfReceived = handler; }
-    void OnStasisStarted(StasisStartedHandler handler) { stasisStarted = handler; }
-    void OnPlaybackStarted(PlaybackHandler handler) { PlaybackStarted = handler; }
-    void OnPlaybackFinished(PlaybackHandler handler) { PlaybackFinished = handler; }
+    void OnChannelCreated(ChHandler handler) { chCreated = std::move(handler); }
+    void OnChannelDestroyed(ChHandler handler) { chDestroyed = std::move(handler); }
+    void OnChannelStateChanged(ChHandler handler) { chStateChanged = std::move(handler); }
+    void OnChannelVarSet(ChVarSetHandler handler) { chVarSet = std::move(handler); }
+    void OnChannelDtmfReceived(ChDtmfHandler handler) { chDtmfReceived = std::move(handler); }
+    void OnStasisStarted(StasisStartedHandler handler) { stasisStarted = std::move(handler); }
+    void OnPlaybackStarted(PlaybackHandler handler) { PlaybackStarted = std::move(handler); }
+    void OnPlaybackFinished(PlaybackHandler handler) { PlaybackFinished = std::move(handler); }
 
     ChannelPtr CreateChannel()
     {
@@ -91,7 +92,7 @@ public:
     /// The handler takes a unique_ptr<Bridge> to the new bridge as parameter
     /// If an error occour, the unique_ptr passed is empty.
     template<typename CreationHandler>
-    void CreateBridge(CreationHandler&& h, Bridge::Type type=Bridge::Type::mixing)
+    void CreateBridge(CreationHandler&& h, const Bridge::Type& type=Bridge::Type::mixing)
     {
         client.RawCmd(
             Method::post,
@@ -110,7 +111,7 @@ public:
                     );
                     h(std::move(bridge));
                     */
-                    Bridge* bridge = new Bridge(
+                    auto* bridge = new Bridge(
                         Get<std::string>(tree, {"id"}),
                         Get<std::string>(tree, {"technology"}),
                         Get<std::string>(tree, {"bridge_type"}),

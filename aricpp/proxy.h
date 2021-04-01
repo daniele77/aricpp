@@ -89,7 +89,8 @@ private:
 
     static ProxyImpl& CreateEmpty()
     {
-        return *std::make_shared<ProxyImpl>();
+        static ProxyImpl p;
+        return p;
     }
 
     static ProxyImpl& Command(Method method, std::string request, Client* client, const T& result, std::string body={})
@@ -129,7 +130,7 @@ public:
     using ErrorHandler = std::function<void(Error,const std::string&)>;
     using AfterHandler = std::function<void(const std::string&)>;
 
-    ProxyImpl& After(AfterHandler f)
+    ProxyImpl& After(const AfterHandler& f)
     {
         if ( afterHandler ) // sequence of std::function
         {
@@ -140,7 +141,7 @@ public:
             afterHandler = f;
         return *this;
     }
-    ProxyImpl& OnError(ErrorHandler f)
+    ProxyImpl& OnError(const ErrorHandler& f)
     {
         if ( errorHandler ) // sequence of std::function
         {
@@ -170,15 +171,16 @@ private:
 
     static ProxyImpl& CreateEmpty()
     {
-        return *std::make_shared<ProxyImpl>();
+        static ProxyImpl p;
+        return p;
     }
 
-    static ProxyImpl& Command(Method method, std::string request, Client* client, std::string body={})
+    static ProxyImpl& Command(Method method, const std::string& request, Client* client, const std::string& body={})
     {
         auto proxy = std::make_shared<ProxyImpl>();
         client->RawCmd(
             method,
-            std::move(request),
+            request,
             [proxy](auto e, int state, auto reason, auto respBody)
             {
                 if (e)
@@ -200,7 +202,7 @@ private:
                         proxy->SetError(Error::unknown, reason);
                 }
             },
-            std::move(body)
+            body
         );
         return *proxy;
     }
@@ -218,7 +220,7 @@ public:
     using ErrorHandler = std::function<void(Error,const std::string&)>;
     using AfterHandler = std::function<void(void)>;
 
-    ProxyImpl& After(AfterHandler f)
+    ProxyImpl& After(const AfterHandler& f)
     {
         if ( afterHandler ) // sequence of std::function
         {
@@ -229,7 +231,7 @@ public:
             afterHandler = f;
         return *this;
     }
-    ProxyImpl& OnError(ErrorHandler f)
+    ProxyImpl& OnError(const ErrorHandler& f)
     {
         if ( errorHandler ) // sequence of std::function
         {
@@ -258,15 +260,16 @@ private:
 
     static ProxyImpl& CreateEmpty()
     {
-        return *std::make_shared<ProxyImpl>();
+        static ProxyImpl p;
+        return p;
     }
 
-    static ProxyImpl& Command(Method method, std::string request, Client* client, std::string body={})
+    static ProxyImpl& Command(Method method, const std::string& request, Client* client, const std::string& body={})
     {
         auto proxy = std::make_shared<ProxyImpl>();
         client->RawCmd(
             method,
-            std::move(request),
+            request,
             [proxy](auto e, int state, auto reason, auto)
             {
                 if (e)
@@ -279,7 +282,7 @@ private:
                         proxy->SetError(Error::unknown, reason);
                 }
             },
-            std::move(body)
+            body
         );
         return *proxy;
     }

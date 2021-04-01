@@ -53,7 +53,7 @@ class Call
 {
 public:
     Call( AriModel& m, shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh, bool _moh ) :
-        model(m), calling(callingCh), called(calledCh), moh(_moh)
+        model(m), calling(std::move(callingCh)), called(std::move(calledCh)), moh(_moh)
     {}
 
     bool HasChannel(const Channel& ch, ChMode mode) const
@@ -83,7 +83,7 @@ public:
         );
     }
 
-    bool ChHangup(shared_ptr<Channel> hung)
+    bool ChHangup(const shared_ptr<Channel>& hung)
     {
         shared_ptr<Channel> other = ( hung->Id() == called->Id() ? calling : called );
 
@@ -154,10 +154,11 @@ public:
     CallContainer(const CallContainer&) = delete;
     CallContainer(CallContainer&&) = delete;
     CallContainer& operator=(const CallContainer&) = delete;
+    CallContainer& operator=(CallContainer&&) = delete;
 
 private:
 
-    void CallingChannel(const shared_ptr<Channel> callingCh)
+    void CallingChannel(const shared_ptr<Channel>& callingCh)
     {
         const string callingId = callingCh->Id();
         const string name = callingCh->Name();
@@ -187,7 +188,7 @@ private:
             .After([]() { cout << "Call ok\n"; } );
     }
 
-    void CalledChannel(const shared_ptr<Channel> calledCh)
+    void CalledChannel(const shared_ptr<Channel>& calledCh)
     {
         auto call = FindCallByChannel(calledCh, ChMode::called);
         if (call)
@@ -201,7 +202,7 @@ private:
         calls.emplace_back(make_shared<Call>(channels, callingCh, calledCh, moh));
     }
 
-    void Remove(shared_ptr<Call> call)
+    void Remove(const shared_ptr<Call>& call)
     {
         calls.erase(remove(calls.begin(), calls.end(), call), calls.end());
     }

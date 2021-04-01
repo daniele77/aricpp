@@ -57,10 +57,10 @@ struct TerminationDtmfBase
 class TerminationDtmf : public TerminationDtmfBase<void>
 {
 public:
-    operator std::string() const { return value; }
+    explicit  operator std::string() const { return value; }
 private:
     friend struct TerminationDtmfBase<void>;
-    TerminationDtmf(const char* v) : value(v) {}
+    explicit TerminationDtmf(const char* v) noexcept : value(v) {}
     const std::string value;
 };
 
