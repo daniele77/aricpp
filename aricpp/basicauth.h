@@ -30,71 +30,69 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_BASICAUTH_H_
 #define ARICPP_BASICAUTH_H_
 
-#include <string>
 #include <array>
+#include <string>
 
 namespace aricpp
 {
 namespace detail
 {
-    inline std::string Base64Encode( const std::string& toEncode )
+inline std::string Base64Encode(const std::string& toEncode)
+{
+    static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                            "abcdefghijklmnopqrstuvwxyz"
+                                            "0123456789+/";
+
+    std::string ret;
+    std::array<unsigned char, 3> char_array_3;
+    std::array<unsigned char, 4> char_array_4;
+
+    int i = 0;
+    for (auto ch : toEncode)
     {
-        static const std::string base64_chars =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "abcdefghijklmnopqrstuvwxyz"
-            "0123456789+/";
-
-        std::string ret;
-        std::array< unsigned char, 3 > char_array_3;
-        std::array< unsigned char, 4 > char_array_4;
-
-        int i = 0;
-        for ( auto ch: toEncode )
+        char_array_3[i++] = ch;
+        if (i == 3)
         {
-            char_array_3[i++] = ch;
-            if (i == 3)
-            {
-                char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-                char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-                char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-                char_array_4[3] = char_array_3[2] & 0x3f;
-
-                for ( auto x: char_array_4 )
-                    ret += base64_chars[x];
-
-                i = 0;
-            }
-        }
-
-        if (i)
-        {
-            for( auto j = i; j < 3; ++j )
-                char_array_3[j] = '\0';
-
             char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
             char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
             char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
             char_array_4[3] = char_array_3[2] & 0x3f;
 
-            for ( auto j = 0; (j < i + 1); ++j )
-                ret += base64_chars[char_array_4[j]];
+            for (auto x : char_array_4)
+                ret += base64_chars[x];
 
-            while((i++ < 3))
-                ret += '=';
+            i = 0;
         }
-
-        return ret;
     }
+
+    if (i)
+    {
+        for (auto j = i; j < 3; ++j)
+            char_array_3[j] = '\0';
+
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        char_array_4[3] = char_array_3[2] & 0x3f;
+
+        for (auto j = 0; (j < i + 1); ++j)
+            ret += base64_chars[char_array_4[j]];
+
+        while ((i++ < 3))
+            ret += '=';
+    }
+
+    return ret;
+}
 
 } // namespace detail
 
-inline std::string GetBasicAuth( const std::string& user, const std::string& psw )
+inline std::string GetBasicAuth(const std::string& user, const std::string& psw)
 {
-    return "Basic " + detail::Base64Encode( user + ':' + psw );
+    return "Basic " + detail::Base64Encode(user + ':' + psw);
 }
 
 } // namespace aricpp

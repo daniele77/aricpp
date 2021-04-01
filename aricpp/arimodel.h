@@ -30,32 +30,30 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_ARIMODEL_H_
 #define ARICPP_ARIMODEL_H_
 
-#include "bridge.h"
-#include "channel.h"
-#include "client.h"
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include "bridge.h"
+#include "channel.h"
+#include "client.h"
 
 namespace aricpp
 {
 
 /**
  * @brief Provides the telephony object model on top of a asterisk connection.
- * 
+ *
  * This class provides methods to create channels (class Channel) and
  * register handlers for stasis and channel events.
  */
 class AriModel
 {
 public:
-
     using ChannelPtr = std::shared_ptr<Channel>;
 
     explicit AriModel(Client& c) : client(c) { Subscribe(); }
@@ -67,7 +65,7 @@ public:
 
     using ChHandler = std::function<void(ChannelPtr)>;
     using ChVarSetHandler = std::function<void(ChannelPtr, const std::string&, const std::string&)>;
-    using ChDtmfHandler = std::function<void(ChannelPtr, const std::string &)>;
+    using ChDtmfHandler = std::function<void(ChannelPtr, const std::string&)>;
     using PlaybackHandler = std::function<void(const Playback&)>;
     using StasisStartedHandler = std::function<void(ChannelPtr, bool external)>;
 
@@ -92,12 +90,12 @@ public:
     /// The handler takes a unique_ptr<Bridge> to the new bridge as parameter
     /// If an error occour, the unique_ptr passed is empty.
     template<typename CreationHandler>
-    void CreateBridge(CreationHandler&& h, const Bridge::Type& type=Bridge::Type::mixing)
+    void CreateBridge(CreationHandler&& h, const Bridge::Type& type = Bridge::Type::mixing)
     {
         client.RawCmd(
             Method::post,
             "/ari/bridges?type=" + static_cast<std::string>(type),
-            [ this, h(std::forward<CreationHandler>(h)) ](auto,auto,auto,auto body)
+            [this, h(std::forward<CreationHandler>(h))](auto, auto, auto, auto body)
             {
                 try
                 {
@@ -131,24 +129,21 @@ public:
                     std::cerr << "Unknown exception in POST bridge response\n";
                     h({});
                 }
-            }
-        );
+            });
     }
 
-
 private:
-
     void Subscribe()
     {
         client.OnEvent(
             "ChannelCreated",
             [this](const JsonTree& e)
             {
-                auto state = Get<std::string>( e, {"channel", "state"} );
-                auto id = Get<std::string>( e, {"channel", "id"} );
+                auto state = Get<std::string>(e, {"channel", "state"});
+                auto id = Get<std::string>(e, {"channel", "id"});
                 auto findResult = channels.find(id);
                 ChannelPtr channel;
-                if ( findResult == channels.end() )
+                if (findResult == channels.end())
                 {
                     auto it = channels.emplace(id, std::make_shared<Channel>(client, id, state));
                     channel = it.first->second;
@@ -159,54 +154,50 @@ private:
                     channel->StateChanged(state);
                 }
                 if (chCreated) chCreated(channel);
-            }
-        );
+            });
 
         client.OnEvent(
             "StasisStart",
             [this](const JsonTree& e)
             {
-                const std::string id = Get<std::string>( e, {"channel", "id"} );
-                const std::string name = Get<std::string>( e, {"channel", "name"} );
-                const std::string ext = Get<std::string>( e, {"channel", "dialplan", "exten"} );
-                const std::string callerNum = Get<std::string>( e, {"channel", "caller", "number"} );
-                const std::string callerName = Get<std::string>( e, {"channel", "caller", "name"} );
-                const auto& args = Get<std::vector<std::string>>( e, {"args"} );
+                const std::string id = Get<std::string>(e, {"channel", "id"});
+                const std::string name = Get<std::string>(e, {"channel", "name"});
+                const std::string ext = Get<std::string>(e, {"channel", "dialplan", "exten"});
+                const std::string callerNum = Get<std::string>(e, {"channel", "caller", "number"});
+                const std::string callerName = Get<std::string>(e, {"channel", "caller", "name"});
+                const auto& args = Get<std::vector<std::string>>(e, {"args"});
 
                 auto ch = channels.find(id);
-                if ( ch == channels.end() ) return;
+                if (ch == channels.end()) return;
 
                 ch->second->StasisStart(name, ext, callerNum, callerName);
                 if (stasisStarted) stasisStarted(ch->second, args.empty());
-            }
-        );
+            });
         client.OnEvent(
             "ChannelDestroyed",
             [this](const JsonTree& e)
             {
-                auto id = Get<std::string>( e, {"channel", "id"} );
-                auto cause = Get<int>( e, {"cause"} );
-                auto causeTxt = Get<std::string>( e, {"cause_txt"} );
+                auto id = Get<std::string>(e, {"channel", "id"});
+                auto cause = Get<int>(e, {"cause"});
+                auto causeTxt = Get<std::string>(e, {"cause_txt"});
 
                 auto ch = channels.find(id);
-                if ( ch == channels.end() ) return;
+                if (ch == channels.end()) return;
                 ch->second->Dead(cause, causeTxt);
                 if (chDestroyed) chDestroyed(ch->second);
                 channels.erase(id);
-            }
-        );
+            });
         client.OnEvent(
             "ChannelStateChange",
             [this](const JsonTree& e)
             {
-                auto id = Get<std::string>( e, {"channel", "id"} );
-                auto state = Get<std::string>( e, {"channel", "state"} );
+                auto id = Get<std::string>(e, {"channel", "id"});
+                auto state = Get<std::string>(e, {"channel", "state"});
                 auto ch = channels.find(id);
-                if ( ch == channels.end() ) return;
+                if (ch == channels.end()) return;
                 ch->second->StateChanged(state);
                 if (chStateChanged) chStateChanged(ch->second);
-            }
-        );
+            });
 
         client.OnEvent(
             "ChannelVarset",
@@ -218,9 +209,9 @@ private:
                 auto value = Get<std::string>(e, {"value"});
                 try
                 {
-                    auto chId = Get<std::string>(e, {"channel","id"});
+                    auto chId = Get<std::string>(e, {"channel", "id"});
                     auto ch = channels.find(chId);
-                    if ( ch == channels.end() ) return;
+                    if (ch == channels.end()) return;
                     // channel variable
                     chVarSet(ch->second, variable, value);
                 }
@@ -229,48 +220,43 @@ private:
                     // global variable
                     chVarSet(nullptr, variable, value);
                 }
-            }
-        );
+            });
 
         client.OnEvent(
             "ChannelDtmfReceived",
             [this](const JsonTree& e)
             {
                 if (!chDtmfReceived) return;
-                auto id = Get<std::string>( e, {"channel", "id"} );
-                auto digit = Get<std::string>( e, {"digit"} );
+                auto id = Get<std::string>(e, {"channel", "id"});
+                auto digit = Get<std::string>(e, {"digit"});
                 auto ch = channels.find(id);
-                if (ch == channels.end() ) return;
+                if (ch == channels.end()) return;
                 chDtmfReceived(ch->second, digit);
-            }
-        );
+            });
 
         client.OnEvent(
             "PlaybackStarted",
             [this](const JsonTree& e)
             {
-                const std::string id = Get<std::string>( e, {"playback", "id"} );
-                const std::string media_uri = Get<std::string>( e, {"playback", "media_uri"} );
-                const std::string target_uri = Get<std::string>( e, {"playback", "target_uri"} );
-                const std::string language = Get<std::string>( e, {"playback", "language"} );
-                const std::string state = Get<std::string>( e, {"playback", "state"} );
+                const std::string id = Get<std::string>(e, {"playback", "id"});
+                const std::string media_uri = Get<std::string>(e, {"playback", "media_uri"});
+                const std::string target_uri = Get<std::string>(e, {"playback", "target_uri"});
+                const std::string language = Get<std::string>(e, {"playback", "language"});
+                const std::string state = Get<std::string>(e, {"playback", "state"});
                 if (PlaybackStarted) PlaybackStarted(Playback(id, &client));
-            }
-        );
+            });
 
         client.OnEvent(
             "PlaybackFinished",
             [this](const JsonTree& e)
             {
-                const std::string id = Get<std::string>( e, {"playback", "id"} );
-                const std::string media_uri = Get<std::string>( e, {"playback", "media_uri"} );
-                const std::string target_uri = Get<std::string>( e, {"playback", "target_uri"} );
-                const std::string language = Get<std::string>( e, {"playback", "language"} );
-                const std::string state = Get<std::string>( e, {"playback", "state"} );
+                const std::string id = Get<std::string>(e, {"playback", "id"});
+                const std::string media_uri = Get<std::string>(e, {"playback", "media_uri"});
+                const std::string target_uri = Get<std::string>(e, {"playback", "target_uri"});
+                const std::string language = Get<std::string>(e, {"playback", "language"});
+                const std::string state = Get<std::string>(e, {"playback", "state"});
                 if (PlaybackFinished) PlaybackFinished(Playback(id, &client));
-            }
-        );
-
+            });
     }
 
     Client& client;

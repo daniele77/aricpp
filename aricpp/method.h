@@ -30,12 +30,11 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_METHOD_H_
 #define ARICPP_METHOD_H_
 
-#include <boost/beast/http/verb.hpp>
 #include <string>
+#include <boost/beast/http/verb.hpp>
 
 namespace aricpp
 {
@@ -71,7 +70,7 @@ inline boost::beast::http::verb ToBeast(Method m)
         boost::beast::http::verb::put,
         boost::beast::http::verb::delete_
     };
-    return d[ static_cast<std::underlying_type_t<Method>>(m) ];
+    return d[static_cast<std::underlying_type_t<Method>>(m)];
 }
 
 } // namespace aricpp

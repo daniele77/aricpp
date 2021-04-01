@@ -30,26 +30,25 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_CLIENT_H_
 #define ARICPP_CLIENT_H_
 
+#include <algorithm>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <boost/asio.hpp>
-#include <sstream>
-#include <algorithm>
 
-#include "websocket.h"
 #include "httpclient.h"
 #include "jsontree.h"
+#include "websocket.h"
 
 namespace aricpp
 {
 
 /**
  * @brief Client of a ARI connection.
- * 
+ *
  * This class can connect to the ARI interface of a asterisk box,
  * and can be used to send and receive raw messages to it.
  * You can use a high-level interface by instantiating an object
@@ -58,9 +57,8 @@ namespace aricpp
 class Client
 {
 public:
-
-    using ConnectHandler = std::function< void(boost::system::error_code) >;
-    using EventHandler = std::function< void(const JsonTree&) >;
+    using ConnectHandler = std::function<void(boost::system::error_code)>;
+    using EventHandler = std::function<void(const JsonTree&)>;
 
     Client( boost::asio::io_service& ios, const std::string& host, const std::string& port,
             std::string _user, std::string _password, std::string _application ) :
@@ -71,24 +69,18 @@ public:
     {}
 
     Client() = delete;
-    Client( const Client& ) = delete;
-    Client( Client&& ) = delete;
-    Client& operator = ( const Client& ) = delete;
-    Client& operator = ( Client&& ) = delete;
+    Client(const Client&) = delete;
+    Client(Client&&) = delete;
+    Client& operator=(const Client&) = delete;
+    Client& operator=(Client&&) = delete;
 
-    ~Client() noexcept
-    {
-        Close();
-    }
+    ~Client() noexcept { Close(); }
 
-    void Close() noexcept
-    {
-        websocket.Close();
-    }
+    void Close() noexcept { websocket.Close(); }
 
     /**
      * @brief Connect to asterisk via ARI
-     * 
+     *
      * @param h the callback invoked when the library connect/disconnects to asterisk
      * @param connectionRetrySeconds the period in seconds of reconnection tries. When this parameter is 0 (default)
      * no reconnection is tried.
@@ -96,67 +88,79 @@ public:
     void Connect(ConnectHandler h, const std::chrono::seconds& connectionRetry = std::chrono::seconds::zero())
     {
         onConnection = std::move(h);
-        websocket.Connect( "/ari/events?api_key="+user+":"+password+"&app="+application+"&subscribeAll=true", [this](auto e){
-                if (e) onConnection(e);
-                else this->WebsocketConnected(); // gcc requires "this"
+        websocket.Connect(
+            "/ari/events?api_key=" + user + ":" + password + "&app=" + application + "&subscribeAll=true",
+            [this](auto e)
+            {
+                if (e)
+                    onConnection(e);
+                else
+                    this->WebsocketConnected(); // gcc requires "this"
             },
-            connectionRetry
-        );
+            connectionRetry);
     }
 
-    void OnEvent( const std::string& type, const EventHandler& e )
-    {
-        eventHandlers.insert( std::make_pair( type, e ) );
-    }
+    void OnEvent(const std::string& type, const EventHandler& e) { eventHandlers.insert(std::make_pair(type, e)); }
 
-    template <typename ResponseHandler>
-    void RawCmd(Method method, const std::string& url, ResponseHandler&& Response, const std::string& body={})
+    template<typename ResponseHandler>
+    void RawCmd(Method method, const std::string& url, ResponseHandler&& Response, const std::string& body = {})
     {
         httpclient.SendRequest(method, url, std::forward<ResponseHandler>(Response), body);
     }
 
 private:
-
     void WebsocketConnected()
     {
-        websocket.Receive( [this](const std::string& msg, auto e){
-            if ( e )
-                std::cerr << "Error ws receive: " << e.message() << std::endl; // TODO remove print
-            else
-                this->RawEvent( msg ); // gcc requires this
-        });
+        websocket.Receive(
+            [this](const std::string& msg, auto e)
+            {
+                if (e)
+                    std::cerr << "Error ws receive: " << e.message() << std::endl; // TODO remove print
+                else
+                    this->RawEvent(msg); // gcc requires this
+            });
         // TODO: should become optional?
-        httpclient.SendRequest( Method::post, "/ari/applications/"+application+"/subscription?eventSource=channel:,endpoint:,bridge:,deviceState:", [this](auto ec, auto, auto, auto){
-            if ( ec ) std::cerr << ec.message() << std::endl; // TODO
-            else onConnection( ec );
-        });
+        httpclient.SendRequest(
+            Method::post,
+            "/ari/applications/" + application + "/subscription?eventSource=channel:,endpoint:,bridge:,deviceState:",
+            [this](auto ec, auto, auto, auto)
+            {
+                if (ec)
+                    std::cerr << ec.message() << std::endl; // TODO
+                else
+                    onConnection(ec);
+            });
     }
 
-    void RawEvent( const std::string& msg )
+    void RawEvent(const std::string& msg)
     {
         try
         {
-            JsonTree tree = FromJson( msg );
+            JsonTree tree = FromJson(msg);
             const std::string type = Get<std::string>(tree, {"type"});
-            auto range = eventHandlers.equal_range( type );
-            std::for_each( range.first, range.second, [&tree,&type](auto f){
-                try
+            auto range = eventHandlers.equal_range(type);
+            std::for_each(
+                range.first,
+                range.second,
+                [&tree, &type](auto f)
                 {
-                    f.second(tree);
-                }
-                catch (const std::exception& e)
-                {
-                    // TODO
-                    std::cerr << "Exception in handler of event: " << type << ": " << e.what() << '\n';
-                }
-                catch (...)
-                {
-                    // TODO
-                    std::cerr << "Unknown exception in handler of event: " << type << '\n';
-                }
-            } );
+                    try
+                    {
+                        f.second(tree);
+                    }
+                    catch (const std::exception& e)
+                    {
+                        // TODO
+                        std::cerr << "Exception in handler of event: " << type << ": " << e.what() << '\n';
+                    }
+                    catch (...)
+                    {
+                        // TODO
+                        std::cerr << "Unknown exception in handler of event: " << type << '\n';
+                    }
+                });
         }
-        catch ( const std::exception& e )
+        catch (const std::exception& e)
         {
             // TODO
             std::cerr << "Exception parsing " << msg << ": " << e.what() << std::endl;
@@ -170,7 +174,7 @@ private:
     HttpClient httpclient;
     ConnectHandler onConnection;
 
-    using EventHandlers = std::unordered_multimap< std::string, EventHandler >;
+    using EventHandlers = std::unordered_multimap<std::string, EventHandler>;
     EventHandlers eventHandlers;
 };
 

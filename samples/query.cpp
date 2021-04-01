@@ -30,7 +30,6 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #include <iostream>
 #include <string>
 #include <boost/program_options.hpp>
@@ -77,7 +76,7 @@ int main(int argc, char* argv[])
         }
 
         boost::asio::io_service ios;
-        HttpClient client( ios, host, port, username, password );
+        HttpClient client(ios, host, port, username, password);
 
         std::vector<std::string> requests
         {
@@ -94,22 +93,29 @@ int main(int argc, char* argv[])
             "/ari/sounds"
         };
 
-        std::for_each( requests.begin(), requests.end(), [&client](auto& request){
-            client.SendRequest( Method::get, request, [&request](auto error, auto state, auto reason, auto body ){
-                std::cout << "\nREQUEST " << request << ":\n"
-                          << "error: " << error.message() << '\n'
-                          << "state: " << state << '\n'
-                          << "reason: " << reason << '\n'
-                          << body << '\n';
-            } );
-
-        } );
+        std::for_each(
+            requests.begin(),
+            requests.end(),
+            [&client](auto& request)
+            {
+                client.SendRequest(
+                    Method::get,
+                    request,
+                    [&request](auto error, auto state, auto reason, auto body)
+                    {
+                        std::cout << "\nREQUEST " << request << ":\n"
+                                  << "error: " << error.message() << '\n'
+                                  << "state: " << state << '\n'
+                                  << "reason: " << reason << '\n'
+                                  << body << '\n';
+                    });
+            });
 
         ios.run();
 
         return 0;
     }
-    catch ( const std::exception& e )
+    catch (const std::exception& e)
     {
         std::cerr << "Error: " << e.what() << '\n';
         return -1;
@@ -117,4 +123,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-

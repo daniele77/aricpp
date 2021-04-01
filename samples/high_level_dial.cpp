@@ -30,42 +30,50 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
-#include <boost/program_options.hpp>
 #include <algorithm>
 #include <exception>
 #include <iostream>
 #include <iterator>
 #include <string>
 #include <vector>
+#include <boost/program_options.hpp>
 
 #include "../aricpp/arimodel.h"
-#include "../aricpp/client.h"
-#include "../aricpp/channel.h"
 #include "../aricpp/bridge.h"
+#include "../aricpp/channel.h"
+#include "../aricpp/client.h"
 
 using namespace aricpp;
 using namespace std;
 
-enum class ChMode { calling=1, called=2, both=3 };
+enum class ChMode
+{
+    calling = 1,
+    called = 2,
+    both = 3
+};
 
 class Call
 {
 public:
-    Call( AriModel& m, shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh, bool _moh ) :
-        model(m), calling(std::move(callingCh)), called(std::move(calledCh)), moh(_moh)
-    {}
+    Call(AriModel& m, shared_ptr<Channel> callingCh, shared_ptr<Channel> calledCh, bool _moh)
+        : model(m), calling(std::move(callingCh)), called(std::move(calledCh)), moh(_moh)
+    {
+    }
 
     bool HasChannel(const Channel& ch, ChMode mode) const
     {
-        return ( ( ( calling->Id() == ch.Id() ) && ( static_cast<int>(mode) & static_cast<int>(ChMode::calling) ) ) ||
-                 ( ( called->Id()  == ch.Id() ) && ( static_cast<int>(mode) & static_cast<int>(ChMode::called)  ) ) );
+        return (
+            ((calling->Id() == ch.Id()) && (static_cast<int>(mode) & static_cast<int>(ChMode::calling))) ||
+            ((called->Id() == ch.Id()) && (static_cast<int>(mode) & static_cast<int>(ChMode::called))));
     }
 
     void DialedChRinging()
     {
-        if (moh) calling->StartMoh();
-        else calling->Ring();
+        if (moh)
+            calling->StartMoh();
+        else
+            calling->Ring();
     }
 
     void DialedChStart() { calling->Answer(); }
@@ -78,21 +86,19 @@ public:
                 if (!newBridge) return;
 
                 bridge = move(newBridge);
-                bridge->Add( {&*calling, &*called} );
-            }
-        );
+                bridge->Add({&*calling, &*called});
+            });
     }
 
     bool ChHangup(const shared_ptr<Channel>& hung)
     {
-        shared_ptr<Channel> other = ( hung->Id() == called->Id() ? calling : called );
+        shared_ptr<Channel> other = (hung->Id() == called->Id() ? calling : called);
 
-        if ( !other->IsDead() ) other->Hangup();
-        return ( other->IsDead() );
+        if (!other->IsDead()) other->Hangup();
+        return (other->IsDead());
     }
 
 private:
-
     AriModel& model;
     shared_ptr<Channel> calling;
     shared_ptr<Channel> called;
@@ -113,23 +119,22 @@ public:
         channels.OnStasisStarted(
             [this](shared_ptr<Channel> ch, bool external)
             {
-                if (external) CallingChannel( ch );
-                else CalledChannel( ch );
-            }
-        );
+                if (external)
+                    CallingChannel(ch);
+                else
+                    CalledChannel(ch);
+            });
         channels.OnChannelDestroyed(
             [this](shared_ptr<Channel> ch)
             {
                 auto call = FindCallByChannel(ch, ChMode::both);
                 if (call)
                 {
-                    if ( call->ChHangup(ch) )
-                        Remove(call);
+                    if (call->ChHangup(ch)) Remove(call);
                 }
                 else
                     cerr << "Call with a channel " << ch->Id() << " not found (hangup event)" << endl;
-            }
-        );
+            });
         channels.OnChannelStateChanged(
             [this](shared_ptr<Channel> ch)
             {
@@ -145,11 +150,9 @@ public:
                 else if (state == Channel::State::up)
                 {
                     auto call = FindCallByChannel(ch, ChMode::calling);
-                    if (call)
-                        call->DialingChUp();
+                    if (call) call->DialingChUp();
                 }
-            }
-        );
+            });
     }
     CallContainer(const CallContainer&) = delete;
     CallContainer(CallContainer&&) = delete;
@@ -157,7 +160,6 @@ public:
     CallContainer& operator=(CallContainer&&) = delete;
 
 private:
-
     void CallingChannel(const shared_ptr<Channel>& callingCh)
     {
         const string callingId = callingCh->Id();
@@ -168,13 +170,14 @@ private:
         if (callerName.empty()) callerName = callerNum;
 
         callingCh->GetVar("CALLERID(all)")
-        .OnError([](Error, const string& msg) { cerr << "Error retrieving variable CALLERID: " << msg << endl; } )
-        .After([](auto var){ cout << "CALLERID variable = " << var << endl; } );
+            .OnError([](Error, const string& msg) { cerr << "Error retrieving variable CALLERID: " << msg << endl; })
+            .After([](auto var) { cout << "CALLERID variable = " << var << endl; });
 
         auto calledCh = channels.CreateChannel();
         Create(callingCh, calledCh);
-        calledCh->Dial(chPrefix+ext, application, callerName, inviteVariables)
-            .OnError([callingCh](Error e, const string& msg)
+        calledCh->Dial(chPrefix + ext, application, callerName, inviteVariables)
+            .OnError(
+                [callingCh](Error e, const string& msg)
                 {
                     if (e == Error::network)
                         cerr << "Error creating channel: " << msg << '\n';
@@ -183,9 +186,8 @@ private:
                         cerr << "Error: reason " << msg << '\n';
                         callingCh->Hangup();
                     }
-                }
-            )
-            .After([]() { cout << "Call ok\n"; } );
+                })
+            .After([]() { cout << "Call ok\n"; });
     }
 
     void CalledChannel(const shared_ptr<Channel>& calledCh)
@@ -202,32 +204,27 @@ private:
         calls.emplace_back(make_shared<Call>(channels, callingCh, calledCh, moh));
     }
 
-    void Remove(const shared_ptr<Call>& call)
-    {
-        calls.erase(remove(calls.begin(), calls.end(), call), calls.end());
-    }
+    void Remove(const shared_ptr<Call>& call) { calls.erase(remove(calls.begin(), calls.end(), call), calls.end()); }
 
     // return the index of the call in the vector.
     // return calls.size() if not found
     shared_ptr<Call> FindCallByChannel(const shared_ptr<Channel> ch, ChMode mode) const
     {
-        auto c = find_if(calls.begin(), calls.end(), [&](auto call){ return call->HasChannel(*ch, mode); });
-        return ( c == calls.end() ? shared_ptr<Call>() : *c );
+        auto c = find_if(calls.begin(), calls.end(), [&](auto call) { return call->HasChannel(*ch, mode); });
+        return (c == calls.end() ? shared_ptr<Call>() : *c);
     }
 
     static string CalcVariables(bool autoAns, bool sipCh)
     {
         if (!autoAns) return {};
 
-        if (sipCh) return "{\"SIPADDHEADER0\":\"Call-Info:answer-after=0\"}";
-        else return "{\"PJSIP_HEADER(add,Call-info)\":\"answer-after=0\"}";
+        if (sipCh)
+            return "{\"SIPADDHEADER0\":\"Call-Info:answer-after=0\"}";
+        else
+            return "{\"PJSIP_HEADER(add,Call-info)\":\"answer-after=0\"}";
     }
 
-    static string CalcChPrefix(bool sipCh)
-    {
-        return sipCh ? "sip/" : "pjsip/";
-    }
-
+    static string CalcChPrefix(bool sipCh) { return sipCh ? "sip/" : "pjsip/"; }
 
     const string application;
     vector<shared_ptr<Call>> calls;
@@ -237,8 +234,7 @@ private:
     const string chPrefix;
 };
 
-
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
     try
     {
@@ -302,17 +298,20 @@ int main( int argc, char* argv[] )
             });
 
         Client client(ios, host, port, username, password, application);
-        AriModel channels( client );
-        CallContainer calls( application, channels, moh, autoAns, sipCh );
+        AriModel channels(client);
+        CallContainer calls(application, channels, moh, autoAns, sipCh);
 
-        client.Connect( [&](boost::system::error_code e){
-            if (e)
+        client.Connect(
+            [&](boost::system::error_code e)
             {
-                cerr << "Connection error: " << e.message() << endl;
-            }
-            else
-                cout << "Connected" << endl;
-        }, 10s /* reconnection seconds */ );
+                if (e)
+                {
+                    cerr << "Connection error: " << e.message() << endl;
+                }
+                else
+                    cout << "Connected" << endl;
+            },
+            10s /* reconnection seconds */);
         ios.run();
     }
     catch (exception& e)

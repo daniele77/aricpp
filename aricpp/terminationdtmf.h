@@ -30,7 +30,6 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_TERMINATIONDTMF_H_
 #define ARICPP_TERMINATIONDTMF_H_
 
@@ -57,7 +56,8 @@ struct TerminationDtmfBase
 class TerminationDtmf : public TerminationDtmfBase<void>
 {
 public:
-    explicit  operator std::string() const { return value; }
+    explicit operator std::string() const { return value; }
+
 private:
     friend struct TerminationDtmfBase<void>;
     explicit TerminationDtmf(const char* v) noexcept : value(v) {}

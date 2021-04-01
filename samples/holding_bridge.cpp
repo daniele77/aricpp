@@ -30,21 +30,20 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
-#include <boost/program_options.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <boost/program_options.hpp>
 
 #include "../aricpp/arimodel.h"
-#include "../aricpp/client.h"
-#include "../aricpp/channel.h"
 #include "../aricpp/bridge.h"
+#include "../aricpp/channel.h"
+#include "../aricpp/client.h"
 
 using namespace aricpp;
 using namespace std;
 
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
     try
     {
@@ -105,19 +104,18 @@ int main( int argc, char* argv[] )
 
         vector<shared_ptr<Channel>> channels;
 
-        Client client( ios, host, port, username, password, application );
-        AriModel model( client );
+        Client client(ios, host, port, username, password, application);
+        AriModel model(client);
         shared_ptr<Bridge> bridge;
         model.CreateBridge(
             [&bridge](unique_ptr<Bridge> newBridge)
-            { 
+            {
                 if (!newBridge) return;
 
                 bridge = move(newBridge);
                 cout << "Bridge created" << endl;
             },
-            Bridge::Type::holding
-        );
+            Bridge::Type::holding);
         model.OnStasisStarted(
             [&channels, &bridge](shared_ptr<Channel> ch, bool external)
             {
@@ -131,7 +129,7 @@ int main( int argc, char* argv[] )
                     }
                     else
                     {
-                        cout << "Adding participant to bridge" << endl;                        
+                        cout << "Adding participant to bridge" << endl;
                         bridge->Add(*ch, false /* mute */, Bridge::Role::participant);
                     }
                     channels.push_back(ch);
@@ -140,18 +138,19 @@ int main( int argc, char* argv[] )
                 {
                     cerr << "WARNING: should not reach this line" << endl;
                 }
-            }
-        );
+            });
 
-        client.Connect( [&](boost::system::error_code e){
-            if (e)
+        client.Connect(
+            [&](boost::system::error_code e)
             {
-                cerr << "Connection error: " << e.message() << endl;
-                ios.stop();
-            }
-            else
-                cout << "Connected" << endl;
-        });
+                if (e)
+                {
+                    cerr << "Connection error: " << e.message() << endl;
+                    ios.stop();
+                }
+                else
+                    cout << "Connected" << endl;
+            });
 
         ios.run();
     }

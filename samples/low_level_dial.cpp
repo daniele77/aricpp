@@ -30,14 +30,13 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
-#include <boost/program_options.hpp>
 #include <algorithm>
 #include <exception>
 #include <iostream>
 #include <iterator>
-#include <string>
 #include <list>
+#include <string>
+#include <boost/program_options.hpp>
 
 #include "../aricpp/client.h"
 
@@ -93,55 +92,57 @@ POST /ari/bridges/<bridge>/addChannel?channel=<channel>&role=partecipant
 using namespace aricpp;
 using namespace std;
 
-enum class ChMode { dialing=1, dialed=2, both=3 };
+enum class ChMode
+{
+    dialing = 1,
+    dialed = 2,
+    both = 3
+};
 
 class Call
 {
 public:
-    Call( Client& c, const string& dialingCh, const string& dialedCh ) :
-        client(&c), dialing(dialingCh), dialed(dialedCh)
+    Call(Client& c, const string& dialingCh, const string& dialedCh) : client(&c), dialing(dialingCh), dialed(dialedCh)
     {
 #ifdef CALL_TRACE
-        cout << "Call dialing " << dialing << " dialed " << dialed
-             << "created\n";
+        cout << "Call dialing " << dialing << " dialed " << dialed << "created\n";
 #endif
     }
 #ifdef CALL_TRACE
-    ~Call()
-    {
-        cout << "Call destroyed\n";
-    }
+    ~Call() { cout << "Call destroyed\n"; }
 #endif
     Call(const Call&) = delete;
     Call(Call&&) = delete;
     Call& operator=(const Call&) = delete;
     Call& operator=(Call&&) = delete;
 
-    void Dump() const
-    {
-        cout << "Call dialing=" << dialing << " dialed=" << dialed << endl;
-    }
+    void Dump() const { cout << "Call dialing=" << dialing << " dialed=" << dialed << endl; }
 
     bool HasChannel(const string& ch, ChMode mode) const
     {
-        return ( ( ( dialing == ch ) && ( static_cast<int>(mode) & static_cast<int>(ChMode::dialing) ) ) ||
-                 ( ( dialed  == ch ) && ( static_cast<int>(mode) & static_cast<int>(ChMode::dialed)  ) ) );
+        return (
+            ((dialing == ch) && (static_cast<int>(mode) & static_cast<int>(ChMode::dialing))) ||
+            ((dialed == ch) && (static_cast<int>(mode) & static_cast<int>(ChMode::dialed))));
     }
 
     void DialedChRinging()
     {
-        client->RawCmd( Method::post, "/ari/channels/" + dialing + "/ring", [](auto e,auto s,auto r,auto){
-            if (e)
+        client->RawCmd(
+            Method::post,
+            "/ari/channels/" + dialing + "/ring",
+            [](auto e, auto s, auto r, auto)
             {
-                cerr << "Error in ring request: " << e.message() << '\n';
-                return;
-            }
-            if ( s/100 != 2 )
-            {
-                cerr << "Negative response in ring request: " << s << ' ' << r << '\n';
-                return;
-            }
-        });
+                if (e)
+                {
+                    cerr << "Error in ring request: " << e.message() << '\n';
+                    return;
+                }
+                if (s / 100 != 2)
+                {
+                    cerr << "Negative response in ring request: " << s << ' ' << r << '\n';
+                    return;
+                }
+            });
     }
 
     void DialedChStart()
@@ -149,14 +150,13 @@ public:
         client->RawCmd(
             Method::post,
             "/ari/channels/" + dialing + "/answer",
-            [](auto,auto status,auto,auto)
+            [](auto, auto status, auto, auto)
             {
                 if (status == 500) // Internal Server Error (the channel does not exist anymore)
                 {
                     cerr << "Internal Server Error (the channel does not exist anymore)" << endl;
                 }
-            }
-        );
+            });
     }
 
     void DialingChUp()
@@ -164,42 +164,40 @@ public:
         client->RawCmd(
             Method::post,
             "/ari/bridges?type=mixing",
-            [this](auto e,auto s,auto r,auto body)
+            [this](auto e, auto s, auto r, auto body)
             {
                 if (e)
                 {
                     cerr << "Error in bridge request: " << e.message() << '\n';
                     return;
                 }
-                if ( s/100 != 2 )
+                if (s / 100 != 2)
                 {
                     cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
                     return;
                 }
 
-                auto tree = FromJson( body );
-                const string bridge = Get< string >( tree, {"id"} );
-                this->Bridge( bridge );
-            }
-        );
+                auto tree = FromJson(body);
+                const string bridge = Get<string>(tree, {"id"});
+                this->Bridge(bridge);
+            });
     }
 
-    bool ChHangup( const string& id )
+    bool ChHangup(const string& id)
     {
-        string* hung = ( id == dialing ? &dialing : &dialed );
-        string* other = ( id == dialed ? &dialing : &dialed );
+        string* hung = (id == dialing ? &dialing : &dialed);
+        string* other = (id == dialed ? &dialing : &dialed);
 
         hung->clear();
-        if ( other->empty() && ! bridge.empty() )
-            client->RawCmd( Method::delete_, "/ari/bridges/" + bridge, [](auto,auto,auto,auto){});
-        else if ( ! other->empty() )
-            client->RawCmd( Method::delete_, "/ari/channels/" + *other, [](auto,auto,auto,auto){});
-        return ( other->empty() );
+        if (other->empty() && !bridge.empty())
+            client->RawCmd(Method::delete_, "/ari/bridges/" + bridge, [](auto, auto, auto, auto) {});
+        else if (!other->empty())
+            client->RawCmd(Method::delete_, "/ari/channels/" + *other, [](auto, auto, auto, auto) {});
+        return (other->empty());
     }
 
 private:
-
-    void Bridge( const string& bridgeId )
+    void Bridge(const string& bridgeId)
     {
 #ifdef CALL_TRACE
         cout << "Call bridge\n";
@@ -208,20 +206,19 @@ private:
         client->RawCmd(
             Method::post,
             "/ari/bridges/" + bridge + "/addChannel?channel=" + dialing + ',' + dialed,
-            [](auto e,auto s,auto r,auto)
+            [](auto e, auto s, auto r, auto)
             {
                 if (e)
                 {
                     cerr << "Error in bridge request: " << e.message() << '\n';
                     return;
                 }
-                if ( s/100 != 2 )
+                if (s / 100 != 2)
                 {
                     cerr << "Negative response in bridge request: " << s << ' ' << r << '\n';
                     return;
                 }
-            }
-        );
+            });
     }
 
     Client* client;
@@ -233,8 +230,7 @@ private:
 class CallContainer
 {
 public:
-    CallContainer( const string& app, Client& c ) :
-        application( app ), connection( c )
+    CallContainer(const string& app, Client& c) : application(app), connection(c)
     {
         connection.OnEvent(
             "StasisStart",
@@ -242,37 +238,37 @@ public:
             {
                 // Dump(e);
 
-                const auto& args = Get< vector< string > >( e, {"args"} );
-                if ( args.empty() ) DialingChannel( e );
-                else DialedChannel( e );
-            }
-        );
+                const auto& args = Get<vector<string>>(e, {"args"});
+                if (args.empty())
+                    DialingChannel(e);
+                else
+                    DialedChannel(e);
+            });
         connection.OnEvent(
             "ChannelDestroyed",
             [this](const JsonTree& e)
             {
                 // Dump(e);
 
-                auto id = Get< string >( e, {"channel", "id"} );
+                auto id = Get<string>(e, {"channel", "id"});
                 auto call = FindCallByChannel(id, ChMode::both);
                 if (call != calls.end())
                 {
-                    if ( call->ChHangup( id ) )
+                    if (call->ChHangup(id))
                         Remove(call);
                 }
                 else
                     cerr << "Call with a channel " << id << " not found (hangup event)" << endl;
-            }
-        );
+            });
         connection.OnEvent(
             "ChannelStateChange",
             [this](const JsonTree& e)
             {
                 // Dump(e);
 
-                auto id = Get< string >( e, {"channel", "id"} );
-                auto state = Get< string >( e, {"channel", "state"} );
-                if ( state == "Ringing" )
+                auto id = Get<string>(e, {"channel", "id"});
+                auto state = Get<string>(e, {"channel", "state"});
+                if (state == "Ringing")
                 {
                     auto call = FindCallByChannel(id, ChMode::dialed);
                     if (call == calls.end())
@@ -280,13 +276,12 @@ public:
                     else
                         call->DialedChRinging();
                 }
-                else if ( state == "Up" )
+                else if (state == "Up")
                 {
                     auto call = FindCallByChannel(id, ChMode::dialing);
                     if (call != calls.end()) call->DialingChUp();
                 }
-            }
-        );
+            });
     }
     CallContainer(const CallContainer&) = delete;
     CallContainer(CallContainer&&) = delete;
@@ -294,26 +289,25 @@ public:
     CallContainer& operator=(CallContainer&&) = delete;
 
 private:
-
     using CallIt = list<Call>::iterator;
 
-    void DialingChannel( const JsonTree& e )
+    void DialingChannel(const JsonTree& e)
     {
-        const string callingId = Get< string >( e, {"channel", "id"} );
-        const string name = Get< string >( e, {"channel", "name"} );
-        const string ext = Get< string >( e, {"channel", "dialplan", "exten"} );
-        const string callerNum = Get< string >( e, {"channel", "caller", "number"} );
-        string callerName = Get< string >( e, {"channel", "caller", "name"} );
+        const string callingId = Get<string>(e, {"channel", "id"});
+        const string name = Get<string>(e, {"channel", "name"});
+        const string ext = Get<string>(e, {"channel", "dialplan", "exten"});
+        const string callerNum = Get<string>(e, {"channel", "caller", "number"});
+        string callerName = Get<string>(e, {"channel", "caller", "name"});
         if (callerName.empty()) callerName = callerNum;
 
         // generate an id for the called
-        const string dialedId = "aricpp-" + to_string( nextId++ );
+        const string dialedId = "aricpp-" + to_string(nextId++);
 
         // create a new call object
-        Create( callingId, dialedId );
+        Create(callingId, dialedId);
 
         // call the called party
-        connection.RawCmd(
+       connection.RawCmd(
             Method::post,
             "/ari/channels?"
             "endpoint=sip/" + ext +
@@ -322,21 +316,20 @@ private:
             "&callerId=" + callerName +
             "&timeout=-1"
             "&appArgs=dialed," + callingId,
-            [this,callingId](auto e,auto s,auto r,auto)
+            [this, callingId](auto e, auto s, auto r, auto)
             {
                 if (e) cerr << "Error creating channel: " << e.message() << '\n';
-                if (s/100 != 2)
+                if (s / 100 != 2)
                 {
                     cerr << "Error: status code " << s << " reason: " << r << '\n';
-                    connection.RawCmd( Method::delete_, "/ari/channels/"+callingId, [](auto,auto,auto,auto){});
+                    connection.RawCmd(Method::delete_, "/ari/channels/" + callingId, [](auto, auto, auto, auto) {});
                 }
-             }
-        );
+            });
     }
 
-    void DialedChannel( const JsonTree& e )
+    void DialedChannel(const JsonTree& e)
     {
-        auto dialed = Get< string >( e, {"channel", "id"} );
+        auto dialed = Get<string>(e, {"channel", "id"});
         auto call = FindCallByChannel(dialed, ChMode::dialed);
         if (call == calls.end())
             cerr << "Call with dialed ch id " << dialed << " not found (stasis start event)\n";
@@ -353,10 +346,7 @@ private:
         calls.emplace_back(connection, dialingId, dialedId);
     }
 
-    void Remove(CallIt call)
-    {
-        calls.erase(call);
-    }
+    void Remove(CallIt call) { calls.erase(call); }
 
     // return the iterator to the call in the collection.
     // return calls.end() if not found
@@ -373,8 +363,7 @@ private:
     unsigned long long nextId = 0;
 };
 
-
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
     try
     {
@@ -431,21 +420,24 @@ int main( int argc, char* argv[] )
                 ios.stop();
             });
 
-        Client client( ios, host, port, username, password, application );
-        CallContainer calls( application, client );
+        Client client(ios, host, port, username, password, application);
+        CallContainer calls(application, client);
 
-        client.Connect( [&](boost::system::error_code e){
-            if (e)
+        client.Connect(
+            [&](boost::system::error_code e)
             {
-                cerr << "Connection error: " << e.message() << endl;
-            }
-            else
-                cout << "Connected" << endl;
-        }, 10s /* reconnection seconds */ );
+                if (e)
+                {
+                    cerr << "Connection error: " << e.message() << endl;
+                }
+                else
+                    cout << "Connected" << endl;
+            },
+            10s /* reconnection seconds */);
 
         ios.run();
     }
-    catch ( exception& e )
+    catch (exception& e)
     {
         cerr << "Exception in app: " << e.what() << ". Aborting\n";
         return -1;

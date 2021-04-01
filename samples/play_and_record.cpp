@@ -30,24 +30,23 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
+#include <iostream>
+#include <string>
+#include <vector>
 #include <boost/program_options.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <iostream>
-#include <string>
-#include <vector>
 
 #include "../aricpp/arimodel.h"
-#include "../aricpp/client.h"
-#include "../aricpp/channel.h"
 #include "../aricpp/bridge.h"
+#include "../aricpp/channel.h"
+#include "../aricpp/client.h"
 
 using namespace aricpp;
 using namespace std;
 
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
     try
     {
@@ -60,7 +59,7 @@ int main( int argc, char* argv[] )
 
         namespace po = boost::program_options;
         po::options_description desc("Allowed options");
-        desc.add_options()
+         desc.add_options()
             ("help,h", "produce help message")
             ("version,V", "print version string")
 
@@ -71,7 +70,7 @@ int main( int argc, char* argv[] )
             ("application,a", po::value(&application), ("stasis application to use ["s + application + "]").c_str())
             ("sip-channel,S", po::bool_switch(&sipCh), ("use old sip channel instead of pjsip channel ["s + to_string(sipCh) + "]").c_str())
         ;
-
+        
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
@@ -106,22 +105,21 @@ int main( int argc, char* argv[] )
                 ios.stop();
             });
 
-        Client client( ios, host, port, username, password, application );
-        AriModel model( client );
+        Client client(ios, host, port, username, password, application);
+        AriModel model(client);
         shared_ptr<Bridge> bridge;
         aricpp::Recording recording;
         aricpp::Playback playback;
 
         model.CreateBridge(
             [&bridge](unique_ptr<Bridge> newBridge)
-            { 
+            {
                 if (!newBridge) return;
 
                 bridge = move(newBridge);
                 cout << "Bridge created" << endl;
             },
-            Bridge::Type::mixing
-        );
+            Bridge::Type::mixing);
 
         model.OnStasisStarted(
             [&bridge](shared_ptr<Channel> ch, bool external)
@@ -142,68 +140,74 @@ int main( int argc, char* argv[] )
                 {
                     cerr << "WARNING: should not reach this line" << endl;
                 }
-            }
-        );
+            });
 
-        model.OnChannelDtmfReceived([&](std::shared_ptr<aricpp::Channel> /*channel*/, const std::string &digit) {
-            std::cout << "Received digit " << digit << std::endl;
-            if (digit == "1")
+        model.OnChannelDtmfReceived(
+            [&](std::shared_ptr<aricpp::Channel> /*channel*/, const std::string& digit)
             {
-                std::cout << "Start playing..." << std::endl;
-                bridge->Play("sound:tt-monkeys")
-                .After([&playback](aricpp::Playback p){ playback = p; })
-                .OnError([](aricpp::Error, const string& msg)
+                std::cout << "Received digit " << digit << std::endl;
+                if (digit == "1")
                 {
-                    std::cerr << "Error starting playback of audio file."
-                              << " Msg: " << msg << std::endl;
-                });
-            }
-            else if (digit == "2")
-            {
-                std::cout << "stop playing..." << std::endl;
-                playback.Stop();
-            }
-            else if (digit == "3")
-            {
-                std::cout << "start recording..." << std::endl;
-                auto recordingId = boost::uuids::to_string( boost::uuids::random_generator()() );
-                bridge->Record(recordingId, "wav")
-                .After([&recording](aricpp::Recording rec){ recording = rec; })
-                .OnError([](aricpp::Error, const std::string& msg) 
-                { 
-                    std::cerr << "Error starting recording of audio file." 
-                              << " Msg: " << msg << std::endl;
-                });
-            }
-            else if (digit == "4")
-            {
-                std::cout << "Stop recording..." << std::endl;
-                recording.Stop();
-            }
-            else if (digit == "5")
-            {
-                std::cout << "Pause recording..." << std::endl;
-                recording.Pause();
-            }
-            else if (digit == "6")
-            {
-                std::cout << "Resume recording..." << std::endl;
-                recording.Resume();
-            }
-            else 
-            {
-                std::cout << "DTMF not allowed: " << digit << std::endl;
-            }
-        });
+                    std::cout << "Start playing..." << std::endl;
+                    bridge->Play("sound:tt-monkeys")
+                        .After([&playback](aricpp::Playback p) { playback = p; })
+                        .OnError(
+                            [](aricpp::Error, const string& msg)
+                            {
+                                std::cerr << "Error starting playback of audio file."
+                                          << " Msg: " << msg << std::endl;
+                            });
+                }
+                else if (digit == "2")
+                {
+                    std::cout << "stop playing..." << std::endl;
+                    playback.Stop();
+                }
+                else if (digit == "3")
+                {
+                    std::cout << "start recording..." << std::endl;
+                    auto recordingId = boost::uuids::to_string(boost::uuids::random_generator()());
+                    bridge->Record(recordingId, "wav")
+                        .After([&recording](aricpp::Recording rec) { recording = rec; })
+                        .OnError(
+                            [](aricpp::Error, const std::string& msg)
+                            {
+                                std::cerr << "Error starting recording of audio file."
+                                          << " Msg: " << msg << std::endl;
+                            });
+                }
+                else if (digit == "4")
+                {
+                    std::cout << "Stop recording..." << std::endl;
+                    recording.Stop();
+                }
+                else if (digit == "5")
+                {
+                    std::cout << "Pause recording..." << std::endl;
+                    recording.Pause();
+                }
+                else if (digit == "6")
+                {
+                    std::cout << "Resume recording..." << std::endl;
+                    recording.Resume();
+                }
+                else
+                {
+                    std::cout << "DTMF not allowed: " << digit << std::endl;
+                }
+            });
 
-        client.Connect( [&](boost::system::error_code e){
-            if (e)
+        client.Connect(
+            [&](boost::system::error_code e)
             {
-                cerr << "Connection error: " << e.message() << endl;
-            }
-            else
-                cout << "Connected" << endl;
-        }, 10s /* reconnection seconds */ );
+                if (e)
+                {
+                    cerr << "Connection error: " << e.message() << endl;
+                }
+                else
+                    cout << "Connected" << endl;
+            },
+            10s /* reconnection seconds */);
 
         ios.run();
     }

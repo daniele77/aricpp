@@ -30,20 +30,18 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-
 #ifndef ARICPP_WEBSOCKET_H_
 #define ARICPP_WEBSOCKET_H_
 
 //#define ARICPP_TRACE_WEBSOCKET
 
 #include <string>
+#include <utility>
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
-#include <string>
-#include <utility>
 #ifdef ARICPP_TRACE_WEBSOCKET
-    #include <iostream>
+#include <iostream>
 #endif
 
 namespace aricpp
@@ -52,11 +50,10 @@ namespace aricpp
 class WebSocket
 {
 public:
+    using ConnectHandler = std::function<void(const boost::system::error_code&)>;
+    using ReceiveHandler = std::function<void(const std::string&, const boost::system::error_code&)>;
 
-    using ConnectHandler = std::function< void( const boost::system::error_code& ) >;
-    using ReceiveHandler = std::function< void( const std::string&, const boost::system::error_code& ) >;
-
-    WebSocket(boost::asio::io_service& _ios, std::string _host, std::string _port) :
+   WebSocket(boost::asio::io_service& _ios, std::string _host, std::string _port) :
         ios(_ios),
         host(std::move(_host)),
         port(std::move(_port)),
@@ -67,15 +64,12 @@ public:
     {}
 
     WebSocket() = delete;
-    WebSocket( const WebSocket& ) = delete;
-    WebSocket( WebSocket&& ) = delete;
-    WebSocket& operator = ( const WebSocket& ) = delete;
-    WebSocket& operator = ( WebSocket&& ) = delete;
+    WebSocket(const WebSocket&) = delete;
+    WebSocket(WebSocket&&) = delete;
+    WebSocket& operator=(const WebSocket&) = delete;
+    WebSocket& operator=(WebSocket&&) = delete;
 
-    ~WebSocket() noexcept
-    {
-        Close();
-    }
+    ~WebSocket() noexcept { Close(); }
 
     void Connect(std::string req, ConnectHandler h, const std::chrono::seconds& _connectionRetry)
     {
@@ -100,21 +94,20 @@ public:
                 socket.close();
             }
         }
-        catch(const std::exception&)
+        catch (const std::exception&)
         {
             // nothing to do
         }
         connected = false;
     }
 
-    void Receive( ReceiveHandler h )
+    void Receive(ReceiveHandler h)
     {
         onReceive = std::move(h);
         Read();
     }
 
 private:
-
     void Ping()
     {
         if (connected)
@@ -131,8 +124,7 @@ private:
                         Close();
                         Resolve();
                     }
-                }
-            );
+                });
         }
         else
         {
@@ -143,13 +135,14 @@ private:
     void Resolve()
     {
         resolver.async_resolve(
-            boost::asio::ip::tcp::resolver::query{ host, port },
-            [this]( const boost::system::error_code& ec, boost::asio::ip::tcp::resolver::iterator i )
+            boost::asio::ip::tcp::resolver::query{host, port},
+            [this](const boost::system::error_code& ec, boost::asio::ip::tcp::resolver::iterator i)
             {
-                if ( ec ) onConnection( ec );
-                else Resolved( i );
-            }
-        );
+                if (ec)
+                    onConnection(ec);
+                else
+                    Resolved(i);
+            });
     }
 
     void PingTimerExpired()
@@ -163,52 +156,63 @@ private:
         if (connectionRetry == std::chrono::seconds::zero()) return;
 
         pingTimer.expires_from_now(connectionRetry);
-        pingTimer.async_wait([this](const boost::system::error_code& e){
-            if (e) return;
-            PingTimerExpired();
-        });
+        pingTimer.async_wait(
+            [this](const boost::system::error_code& e)
+            {
+                if (e) return;
+                PingTimerExpired();
+            });
     }
 
-    void Resolved( boost::asio::ip::tcp::resolver::iterator i )
+    void Resolved(boost::asio::ip::tcp::resolver::iterator i)
     {
         boost::asio::async_connect(
             socket,
             std::move(i),
-            [this]( boost::system::error_code e, boost::asio::ip::tcp::resolver::iterator )
+            [this](boost::system::error_code e, boost::asio::ip::tcp::resolver::iterator)
             {
-                if ( e ) onConnection( e );
-                else Connected();
-            }
-        );
+                if (e)
+                    onConnection(e);
+                else
+                    Connected();
+            });
     }
 
     void Connected()
     {
-        websocket.async_handshake( host, request, [this]( boost::beast::error_code ec ){
-            connected = true;
-            onConnection( ec );
-        });
+        websocket.async_handshake(
+            host,
+            request,
+            [this](boost::beast::error_code ec)
+            {
+                connected = true;
+                onConnection(ec);
+            });
     }
 
     void Read()
     {
         websocket.async_read(
             rxData,
-            [this](boost::system::error_code ec, std::size_t /* bytes */ ) { Received( ec ); }
+            [this](boost::system::error_code ec, std::size_t /* bytes */) { Received(ec); }
         );
     }
 
-    void Received( boost::system::error_code ec )
+    void Received(boost::system::error_code ec)
     {
-        std::string s( (std::istreambuf_iterator<char>(&rxData)), std::istreambuf_iterator<char>() );
+        std::string s((std::istreambuf_iterator<char>(&rxData)), std::istreambuf_iterator<char>());
 #ifdef ARICPP_TRACE_WEBSOCKET
-        if ( ec ) std::cerr << "*** websocket error: " << ec.message() << '\n';
-        else std::cerr << "*** <== " << s << '\n';
+        if (ec)
+            std::cerr << "*** websocket error: " << ec.message() << '\n';
+        else
+            std::cerr << "*** <== " << s << '\n';
 #endif
-        if ( ec ) onReceive( std::string(), ec );
-        else onReceive( s, ec );
-        rxData.consume( rxData.size() );
-        if ( ec != boost::asio::error::eof && ec != boost::asio::error::operation_aborted ) Read();
+        if (ec)
+            onReceive(std::string(), ec);
+        else
+            onReceive(s, ec);
+        rxData.consume(rxData.size());
+        if (ec != boost::asio::error::eof && ec != boost::asio::error::operation_aborted) Read();
     }
 
     bool connected = false;
@@ -218,7 +222,7 @@ private:
 
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::socket socket;
-    boost::beast::websocket::stream< boost::asio::ip::tcp::socket& > websocket;
+    boost::beast::websocket::stream<boost::asio::ip::tcp::socket&> websocket;
     boost::asio::streambuf rxData;
 
     std::string request;
@@ -232,4 +236,3 @@ private:
 } // namespace aricpp
 
 #endif
-
