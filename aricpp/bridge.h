@@ -171,8 +171,21 @@ public:
         return Proxy::Command(Method::delete_, "/ari/bridges/" + id + "/moh", client);
     }
 
-    ProxyPar<Playback>& Play(const std::string& media, const std::string& lang={},
-                             int offsetms=-1, int skipms=-1) const
+#ifdef ARICPP_DEPRECATED_API
+    [[deprecated("Use the Play method with std::chrono parameters instead")]]
+    ProxyPar<Playback>& Play(const std::string& media, const std::string& lang,
+                             int offsetms, int skipms=-1) const
+    {
+        if (offsetms == -1) offsetms = 0;
+        if (skipms == -1) skipms = 0;
+        return Play(media, lang, std::chrono::milliseconds(offsetms), std::chrono::milliseconds(skipms));
+    }
+#endif // ARICPP_DEPRECATED_API
+    ProxyPar<Playback>& Play(const std::string& media,
+                             const std::string& lang={},
+                             const std::chrono::milliseconds& offset = std::chrono::milliseconds::zero(),
+                             const std::chrono::milliseconds& skip = std::chrono::milliseconds::zero()
+    ) const
     {
         Playback playback(client);
         return ProxyPar<Playback>::Command(
@@ -181,16 +194,34 @@ public:
             "media=" + UrlEncode(media) +
             ( lang.empty() ? "" : "&lang=" + lang ) +
             "&playbackId=" + playback.Id() +
-            ( offsetms < 0 ? "" : "&offsetms=" + std::to_string(offsetms) ) +
-            ( skipms < 0 ? "" : "&skipms=" + std::to_string(skipms) ),
+            ( offset == std::chrono::milliseconds::zero() ? "" : ("&offsetms=" + std::to_string(offset.count())) ) +
+            ( skip == std::chrono::milliseconds::zero() ? "" : ("&skipms=" + std::to_string(skip.count())) ),
             client,
             playback
         );
     }
 
+#ifdef ARICPP_DEPRECATED_API
+    [[deprecated("Use the Record method with std::chrono parameters instead")]]
     ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
-                  int maxDurationSeconds=-1, int maxSilenceSeconds=-1,
+                  int maxDurationSeconds, int maxSilenceSeconds=-1,
                   const std::string& ifExists={}, bool beep=false, const TerminationDtmf& terminateOn=TerminationDtmf::none) const
+    {
+        if (maxDurationSeconds == -1) maxDurationSeconds = 0;
+        if (maxSilenceSeconds == -1) maxSilenceSeconds = 0;
+        return Record(name, format, std::chrono::seconds(maxDurationSeconds), std::chrono::seconds(maxSilenceSeconds), ifExists, beep, terminateOn);
+    }
+#endif // ARICPP_DEPRECATED_API
+
+    ProxyPar<Recording>& Record(
+        const std::string& name,
+        const std::string& format,
+        const std::chrono::seconds& maxDuration = std::chrono::seconds::zero(),
+        const std::chrono::seconds& maxSilence = std::chrono::seconds::zero(),
+        const std::string& ifExists={},
+        bool beep=false,
+        const TerminationDtmf& terminateOn=TerminationDtmf::none
+    ) const
     {
         Recording recording(name, client);
         return ProxyPar<Recording>::Command(
@@ -201,8 +232,8 @@ public:
             "&terminateOn=" + static_cast<std::string>(terminateOn) +
             ( beep ? "&beep=true" : "&beep=false" ) +
             ( ifExists.empty() ? "" : "&ifExists=" + ifExists ) +
-            ( maxDurationSeconds < 0 ? "" : "&maxDurationSeconds=" + std::to_string(maxDurationSeconds) ) +
-            ( maxSilenceSeconds < 0 ? "" : "&maxSilenceSeconds=" + std::to_string(maxSilenceSeconds) ),
+            ( maxDuration == std::chrono::seconds::zero() ? "" : ("&maxDurationSeconds=" + std::to_string(maxDuration.count())) ) +
+            ( maxSilence == std::chrono::seconds::zero() ? "" : ("&maxSilenceSeconds=" + std::to_string(maxSilence.count())) ),
             client,
             recording
         );

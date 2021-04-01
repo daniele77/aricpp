@@ -93,14 +93,15 @@ public:
      * @param connectionRetrySeconds the period in seconds of reconnection tries. When this parameter is 0 (default)
      * no reconnection is tried.
      */
-    void Connect(ConnectHandler h, std::size_t connectionRetrySeconds = 0)
+    void Connect(ConnectHandler h, const std::chrono::seconds& connectionRetry = std::chrono::seconds::zero())
     {
         onConnection = std::move(h);
         websocket.Connect( "/ari/events?api_key="+user+":"+password+"&app="+application+"&subscribeAll=true", [this](auto e){
-            if (e) onConnection(e);
-            else this->WebsocketConnected(); // gcc requires "this"
-        },
-        connectionRetrySeconds );
+                if (e) onConnection(e);
+                else this->WebsocketConnected(); // gcc requires "this"
+            },
+            connectionRetry
+        );
     }
 
     void OnEvent( const std::string& type, const EventHandler& e )

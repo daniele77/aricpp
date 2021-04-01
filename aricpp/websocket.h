@@ -77,13 +77,13 @@ public:
         Close();
     }
 
-    void Connect(std::string req, ConnectHandler h, std::size_t _connectionRetrySeconds)
+    void Connect(std::string req, ConnectHandler h, const std::chrono::seconds& _connectionRetry)
     {
         request = std::move(req);
         onConnection = std::move(h);
         Resolve();
-        connectionRetrySeconds = _connectionRetrySeconds;
-        if (connectionRetrySeconds != 0)
+        connectionRetry = _connectionRetry;
+        if (connectionRetry != std::chrono::seconds::zero())
             StartPingTimer();
     }
 
@@ -160,9 +160,9 @@ private:
 
     void StartPingTimer()
     {
-        if (connectionRetrySeconds == 0) return;
+        if (connectionRetry == std::chrono::seconds::zero()) return;
 
-        pingTimer.expires_from_now(boost::asio::chrono::seconds(connectionRetrySeconds));
+        pingTimer.expires_from_now(connectionRetry);
         pingTimer.async_wait([this](const boost::system::error_code& e){
             if (e) return;
             PingTimerExpired();
@@ -226,7 +226,7 @@ private:
     ReceiveHandler onReceive;
 
     boost::asio::steady_timer pingTimer;
-    std::size_t connectionRetrySeconds = 0;
+    std::chrono::seconds connectionRetry = std::chrono::seconds::zero();
 };
 
 } // namespace aricpp
