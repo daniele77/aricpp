@@ -54,8 +54,10 @@ examples/play_and_record
 .pch
 .sdf
 .suo
+.vs
 
 # Other
 .svn
 Debug
 Release
+/CMakeSettings.json

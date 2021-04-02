@@ -4,16 +4,16 @@
 
 Asterisk ARI interface bindings for modern C++
 
-## Properties
+## Features
 
-* modern C++
-* multiplatform
-* header only
-* asynchronous
-* high level interface to manipulate asterisk concepts (channels, bridges, ...)
-* low level interface to send and receive ARI commands and events from asterisk
-* fluent interface
-* efficient (tested with sipp traffic generator)
+* Header only
+* Modern C++
+* Multiplatform
+* Asynchronous
+* High level interface to manipulate asterisk concepts (channels, bridges, ...)
+* Low level interface to send and receive ARI commands and events from asterisk
+* Fluent interface
+* Efficient (tested with sipp traffic generator)
 
 ## Requirements
 
@@ -30,6 +30,18 @@ Extract the archive wherever you want.
 Now you must only remember to specify the aricpp and boost paths when
 compiling your source code.
 
+If you fancy it, a Cmake script is provided. To install you can use:
+
+    mkdir build && cd build
+    cmake ..
+    sudo make install
+
+and, if you want to specify the installation path:
+
+    mkdir build && cd build
+    cmake .. -DCMAKE_INSTALL_PREFIX:PATH=<aricpp_install_location>
+    make install
+
 ## Compilation of the examples
 
 You can find some examples in the directory "examples".
@@ -37,7 +49,16 @@ Each .cpp file corresponds to an executable. You can compile each example by inc
 aricpp and boost header files and linking boost system, boost program options
 (and pthread on linux).
 
-In the directory examples you can also find:
+To compile the examples using cmake, use:
+
+    mkdir build
+    cd build
+    cmake .. -DARICPP_BuildExamples=ON
+    # or: cmake .. -DARICPP_BuildExamples=ON -DBOOST_INCLUDEDIR=<boost_include_directory>
+    make all
+    # or: cmake --build .
+
+In the same directory you can also find:
 
 * a GNU make file (Makefile)
 * a Windows nmake file (makefile.win)
