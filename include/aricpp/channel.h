@@ -338,18 +338,18 @@ public:
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the Record method with std::chrono parameters instead")]]
-    ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
+    ProxyPar<Recording>& Record(const std::string& _name, const std::string& format,
                   int maxDurationSeconds, int maxSilenceSeconds=-1,
                   const std::string& ifExists={}, bool beep=false, const TerminationDtmf& terminateOn=TerminationDtmf::none) const
     {
         if (maxDurationSeconds == -1) maxDurationSeconds = 0;
         if (maxSilenceSeconds == -1) maxSilenceSeconds = 0;
-        return Record(name, format, std::chrono::seconds(maxDurationSeconds), std::chrono::seconds(maxSilenceSeconds), ifExists, beep, terminateOn);
+        return Record(_name, format, std::chrono::seconds(maxDurationSeconds), std::chrono::seconds(maxSilenceSeconds), ifExists, beep, terminateOn);
     }
 #endif // ARICPP_DEPRECATED_API
 
     ProxyPar<Recording>& Record(
-        const std::string& name,
+        const std::string& _name,
         const std::string& format,
         const std::chrono::seconds& maxDuration = std::chrono::seconds::zero(),
         const std::chrono::seconds& maxSilence = std::chrono::seconds::zero(),
@@ -362,7 +362,7 @@ public:
         return ProxyPar<Recording>::Command(
             Method::post,
             "/ari/channels/"+id+"/record?"
-            "name=" + UrlEncode(name) +
+            "name=" + UrlEncode(_name) +
             "&format=" + format +
             "&terminateOn=" + static_cast<std::string>(terminateOn) +
             ( beep ? "&beep=true" : "&beep=false" ) +

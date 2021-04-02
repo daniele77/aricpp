@@ -47,10 +47,10 @@ inline std::string Base64Encode(const std::string& toEncode)
                                             "0123456789+/";
 
     std::string ret;
-    std::array<unsigned char, 3> char_array_3;
+    std::array<char, 3> char_array_3;
     std::array<unsigned char, 4> char_array_4;
 
-    int i = 0;
+    std::size_t i = 0;
     for (auto ch : toEncode)
     {
         char_array_3[i++] = ch;
@@ -78,7 +78,7 @@ inline std::string Base64Encode(const std::string& toEncode)
         char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
         char_array_4[3] = char_array_3[2] & 0x3f;
 
-        for (auto j = 0; (j < i + 1); ++j)
+        for (std::size_t j = 0; (j < i + 1); ++j)
             ret += base64_chars[char_array_4[j]];
 
         while ((i++ < 3))

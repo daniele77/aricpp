@@ -8,6 +8,7 @@
 - Using std::chrono parameters instead of ints. Fixes [#35](https://github.com/daniele77/aricpp/issues/35) 
 - Channel is not copyable nor movable. Fixes [#36](https://github.com/daniele77/aricpp/issues/36) 
 - Move library header files in include/aricpp directory. Fixes [#40](https://github.com/daniele77/aricpp/issues/40) 
+- Add cmake support. Fixes [#42](https://github.com/daniele77/aricpp/issues/42) 
 
 ## Version 0.9.1 - 2020-10-29
 

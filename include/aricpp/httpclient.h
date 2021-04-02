@@ -56,7 +56,7 @@ class HttpClient
 {
 public:
     using ResponseHandler = 
-        std::function<void(const boost::system::error_code&, int status, const std::string& reason, const std::string& body)>;
+        std::function<void(const boost::system::error_code&, unsigned int status, const std::string& reason, const std::string& body)>;
 
     HttpClient( boost::asio::io_service& _ios, std::string _host, std::string _port, const std::string& user, const std::string& password ) :
         ios(_ios), host(std::move(_host)), port(std::move(_port)),
@@ -114,8 +114,7 @@ private:
     {
         assert(!pending.empty());
 
-        pending.front().onResponse(
-            e, static_cast<std::underlying_type_t<boost::beast::http::status>>(status), reason, body);
+        pending.front().onResponse(e, static_cast<std::underlying_type_t<boost::beast::http::status>>(status), reason, body);
         pending.pop();
 
         if (pending.empty())

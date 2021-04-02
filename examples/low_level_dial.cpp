@@ -178,8 +178,8 @@ public:
                 }
 
                 auto tree = FromJson(body);
-                const string bridge = Get<string>(tree, {"id"});
-                this->Bridge(bridge);
+                const string myBridge = Get<string>(tree, {"id"});
+                this->Bridge(myBridge);
             });
     }
 

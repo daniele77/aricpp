@@ -1,0 +1,8 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/include
+
+Name: aricpp
+Description: Asterisk ARI interface bindings for modern C++
+URL: https://github.com/daniele77/aricpp
+Version: @aricpp_VERSION@
+Cflags: -I${includedir}
