@@ -62,7 +62,9 @@ In the same directory you can also find:
 
 * a GNU make file (Makefile)
 * a Windows nmake file (makefile.win)
-* a Visual Studio solution
+
+(NOTE: a Visual Studio Solution is no longer present in the library:
+you can open instead a cmake project from Visual Studio).
 
 You can specify boost library path in the following ways:
 
@@ -81,11 +83,6 @@ example:
 Set the environment variable BOOST. Then, from a visual studio console, use the command:
 
     nmake /f makefile.win
-
-### Visual Studio solution
-
-Set the environment variable BOOST. Then, open the file
-`aricpp/examples/aricpp_samples/aricpp_samples.sln`
 
 ## Compilation of the Doxygen documentation
 
