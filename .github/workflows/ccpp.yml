@@ -9,29 +9,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: setup dependencies old boost
-      run: |
-        sudo rm -rf /usr/lib/libboost_* /usr/lib/cmake/boost_* /usr/lib/libboost_*
-        sudo apt-get remove 'libboost-.*'
-        sudo apt-get -y update
-        rm -rf tmp && mkdir tmp && cd tmp
-        wget https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz
-        tar xzvf boost_1_66_0.tar.gz
-        cd boost_1_66_0
-        ./bootstrap.sh --prefix=/usr/ --with-libraries=test,thread,system,program_options
-        ./b2
-        sudo ./b2 install
-    - name: make old boost
-      run: |
-        cd examples
-        make clean
-        make
-    - name: cmake old boost
-      run: |
-        rm -rf build
-        mkdir build && cd build
-        cmake .. -DARICPP_BuildExamples=ON -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wundef -Werror"
-        make
     - name: setup dependencies new boost
       run: |
         sudo rm -rf /usr/lib/libboost_* /usr/lib/cmake/boost_* /usr/lib/libboost_* 
