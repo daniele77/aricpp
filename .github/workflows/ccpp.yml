@@ -11,6 +11,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: setup dependencies old boost
       run: |
+        sudo rm -rf /usr/lib/libboost_* /usr/lib/cmake/boost_* /usr/lib/libboost_ 
         sudo apt-get remove 'libboost-.*'
         sudo apt-get -y update
         rm -rf tmp && mkdir tmp && cd tmp
@@ -33,6 +34,7 @@ jobs:
         make
     - name: setup dependencies new boost
       run: |
+        sudo rm -rf /usr/lib/libboost_* /usr/lib/cmake/boost_* /usr/lib/libboost_ 
         sudo apt-get remove 'libboost-.*'
         sudo apt-get -y update
         rm -rf tmp && mkdir tmp && cd tmp
