@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Compiles again with boost libraries v. 1.66.0. Fixes [#45](https://github.com/daniele77/aricpp/issues/45) 
+
 ## Version 1.0.0 - 2021-04-07
 
 - Optional asterisk reconnection. Fixes [#32](https://github.com/daniele77/aricpp/issues/32) 

@@ -118,7 +118,7 @@ private:
                 pingWebSocketFrame,
                 [this](const boost::beast::error_code& error_code)
                 {
-                    if (error_code.failed())
+                    if (error_code)
                     {
                         // remedy the situation. Close the current websocket connection and try to restart
                         Close();
