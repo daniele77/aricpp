@@ -196,10 +196,10 @@ private:
         client->RawCmd(
             method,
             request,
-            [proxy](auto e, int state, auto reason, auto respBody)
+            [proxy](auto err, int state, auto reason, auto respBody)
             {
-                if (e)
-                    proxy->SetError(Error::network, e.message());
+                if (err)
+                    proxy->SetError(Error::network, err.message());
                 else
                 {
                     if (state / 100 == 2)
@@ -208,9 +208,9 @@ private:
                         {
                             proxy->Completed(respBody);
                         }
-                        catch (const std::exception& e)
+                        catch (const std::exception& ex)
                         {
-                            proxy->SetError(Error::unknown, e.what());
+                            proxy->SetError(Error::unknown, ex.what());
                         }
                     }
                     else

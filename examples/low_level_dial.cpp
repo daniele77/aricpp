@@ -291,13 +291,13 @@ public:
 private:
     using CallIt = list<Call>::iterator;
 
-    void DialingChannel(const JsonTree& e)
+    void DialingChannel(const JsonTree& ev)
     {
-        const string callingId = Get<string>(e, {"channel", "id"});
-        const string name = Get<string>(e, {"channel", "name"});
-        const string ext = Get<string>(e, {"channel", "dialplan", "exten"});
-        const string callerNum = Get<string>(e, {"channel", "caller", "number"});
-        string callerName = Get<string>(e, {"channel", "caller", "name"});
+        const string callingId = Get<string>(ev, {"channel", "id"});
+        const string name = Get<string>(ev, {"channel", "name"});
+        const string ext = Get<string>(ev, {"channel", "dialplan", "exten"});
+        const string callerNum = Get<string>(ev, {"channel", "caller", "number"});
+        string callerName = Get<string>(ev, {"channel", "caller", "name"});
         if (callerName.empty()) callerName = callerNum;
 
         // generate an id for the called
@@ -316,9 +316,9 @@ private:
             "&callerId=" + callerName +
             "&timeout=-1"
             "&appArgs=dialed," + callingId,
-            [this, callingId](auto e, auto s, auto r, auto)
+            [this, callingId](auto err, auto s, auto r, auto)
             {
-                if (e) cerr << "Error creating channel: " << e.message() << '\n';
+                if (err) cerr << "Error creating channel: " << err.message() << '\n';
                 if (s / 100 != 2)
                 {
                     cerr << "Error: status code " << s << " reason: " << r << '\n';

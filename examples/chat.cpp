@@ -94,11 +94,11 @@ int main( int argc, char* argv[] )
         client.Connect( [&](boost::system::error_code ){
 
             client.OnEvent( "TextMessageReceived", [&](const JsonTree& e){
-                auto from = Get<std::string>(e, {"message", "from"});
-                auto to = Get<std::string>(e, {"message", "to"});
+                auto src = Get<std::string>(e, {"message", "from"});
+                auto dest = Get<std::string>(e, {"message", "to"});
                 auto msg = Get<std::string>(e, {"message", "body"});
 
-                cout << "> Message from: " << from << " (for: " << to << "):\n";
+                cout << "> Message from: " << src << " (for: " << dest << "):\n";
                 cout << msg << "\n\n";
             });
         });

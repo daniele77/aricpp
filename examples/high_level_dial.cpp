@@ -234,6 +234,11 @@ private:
     const string chPrefix;
 };
 
+inline std::string to_string(bool b)
+{
+    return (b ? "true" : "false");
+}
+
 int main(int argc, char* argv[])
 {
     try
