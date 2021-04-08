@@ -17,7 +17,7 @@ jobs:
         wget https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz
         tar xzvf boost_1_66_0.tar.gz
         cd boost_1_66_0
-        ./bootstrap.sh --prefix=/usr/
+        ./bootstrap.sh --prefix=/usr/ --with-libraries=test,thread,system,program_options
         ./b2
         sudo ./b2 install
     - name: make old boost
@@ -32,7 +32,7 @@ jobs:
         wget https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.gz
         tar xzvf boost_1_75_0.tar.gz
         cd boost_1_75_0
-        ./bootstrap.sh --prefix=/usr/
+        ./bootstrap.sh --prefix=/usr/ --with-libraries=test,thread,system,program_options
         ./b2
         sudo ./b2 install
     - name: make new boost
