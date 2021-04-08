@@ -95,13 +95,13 @@ of the library in this way:
 ## Five minutes tutorial
 
 aricpp is based on boost asio async library. So, to use it you should have an instance
-of `boost::asio::io_service` running and an instance of `aricpp::Client`:
+of `boost::asio::io_context` running and an instance of `aricpp::Client`:
 
 ```C++
 #include "aricpp/client.h"
 
 ...
-boost::asio::io_service ios;
+boost::asio::io_context ios;
 aricpp::Client client(ios, host, port, username, password, stasisapp);
 ...
 ios.run();
@@ -164,7 +164,7 @@ for the usual actions on asterisk channels (e.g., ring, answer, hangup, dial, ..
 
 ...
 
-boost::asio::io_service ios;
+boost::asio::io_context ios;
 aricpp::Client client(ios, host, port, username, password, stasisapp);
 AriModel channels( client );
 

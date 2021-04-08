@@ -1,6 +1,6 @@
 /*******************************************************************************
  * ARICPP - ARI interface for C++
- * Copyright (C) 2017 Daniele Pallastrelli
+ * Copyright (C) 2017-2021 Daniele Pallastrelli
  *
  * This file is part of aricpp.
  * For more information, see http://github.com/daniele77/aricpp
@@ -36,9 +36,9 @@
 #include <queue>
 #include <string>
 #include <utility>
-#include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include "detail/boostasiolib.h"
 #include "basicauth.h"
 #include "method.h"
 
@@ -58,7 +58,7 @@ public:
     using ResponseHandler = 
         std::function<void(const boost::system::error_code&, unsigned int status, const std::string& reason, const std::string& body)>;
 
-    HttpClient( boost::asio::io_service& _ios, std::string _host, std::string _port, const std::string& user, const std::string& password ) :
+    HttpClient(detail::BoostAsioLib::ContextType& _ios, std::string _host, std::string _port, const std::string& user, const std::string& password) :
         ios(_ios), host(std::move(_host)), port(std::move(_port)),
         auth(GetBasicAuth(user, password)),
         resolver(ios),
@@ -84,8 +84,9 @@ public:
 
         // TODO: resolve only once inside the ctor?
         resolver.async_resolve(
-            boost::asio::ip::tcp::resolver::query{host, port},
-            [this](const boost::system::error_code& e, boost::asio::ip::tcp::resolver::iterator i)
+            host,
+            port,
+            [this](const boost::system::error_code& e, boost::asio::ip::tcp::resolver::results_type i)
             {
                 if (e)
                     CallBack(e);
@@ -131,12 +132,12 @@ private:
         }
     }
 
-    void Connect(boost::asio::ip::tcp::resolver::iterator i)
+    void Connect(boost::asio::ip::tcp::resolver::results_type i)
     {
         boost::asio::async_connect(
             socket,
             std::move(i),
-            [this](boost::system::error_code e, boost::asio::ip::tcp::resolver::iterator)
+            [this](const boost::system::error_code& e, const boost::asio::ip::tcp::endpoint&)
             {
                 if (e)
                     CallBack(e);
@@ -222,7 +223,7 @@ private:
             });
     }
 
-    boost::asio::io_service& ios;
+    detail::BoostAsioLib::ContextType& ios;
     const std::string host;
     const std::string port;
     const std::string auth;

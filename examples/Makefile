@@ -1,6 +1,6 @@
 ################################################################################
 # ARICPP - ARI interface for C++
-# Copyright (C) 2017 Daniele Pallastrelli
+# Copyright (C) 2017-2021 Daniele Pallastrelli
 #
 # This file is part of aricpp.
 # For more information, see http://github.com/daniele77/aricpp

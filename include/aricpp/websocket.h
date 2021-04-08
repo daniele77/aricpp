@@ -1,6 +1,6 @@
 /*******************************************************************************
  * ARICPP - ARI interface for C++
- * Copyright (C) 2017 Daniele Pallastrelli
+ * Copyright (C) 2017-2021 Daniele Pallastrelli
  *
  * This file is part of aricpp.
  * For more information, see http://github.com/daniele77/aricpp
@@ -37,12 +37,12 @@
 
 #include <string>
 #include <utility>
-#include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #ifdef ARICPP_TRACE_WEBSOCKET
 #include <iostream>
 #endif
+#include "detail/boostasiolib.h"
 
 namespace aricpp
 {
@@ -53,7 +53,7 @@ public:
     using ConnectHandler = std::function<void(const boost::system::error_code&)>;
     using ReceiveHandler = std::function<void(const std::string&, const boost::system::error_code&)>;
 
-   WebSocket(boost::asio::io_service& _ios, std::string _host, std::string _port) :
+   WebSocket(detail::BoostAsioLib::ContextType& _ios, std::string _host, std::string _port) :
         ios(_ios),
         host(std::move(_host)),
         port(std::move(_port)),
@@ -135,8 +135,9 @@ private:
     void Resolve()
     {
         resolver.async_resolve(
-            boost::asio::ip::tcp::resolver::query{host, port},
-            [this](const boost::system::error_code& ec, boost::asio::ip::tcp::resolver::iterator i)
+            host,
+            port,
+            [this](const boost::system::error_code& ec, boost::asio::ip::tcp::resolver::results_type i)
             {
                 if (ec)
                     onConnection(ec);
@@ -155,7 +156,7 @@ private:
     {
         if (connectionRetry == std::chrono::seconds::zero()) return;
 
-        pingTimer.expires_from_now(connectionRetry);
+        pingTimer.expires_after(connectionRetry);
         pingTimer.async_wait(
             [this](const boost::system::error_code& e)
             {
@@ -164,12 +165,12 @@ private:
             });
     }
 
-    void Resolved(boost::asio::ip::tcp::resolver::iterator i)
+    void Resolved(boost::asio::ip::tcp::resolver::results_type i)
     {
         boost::asio::async_connect(
             socket,
             std::move(i),
-            [this](boost::system::error_code e, boost::asio::ip::tcp::resolver::iterator)
+            [this](const boost::system::error_code& e, const boost::asio::ip::tcp::endpoint&)
             {
                 if (e)
                     onConnection(e);
@@ -216,7 +217,7 @@ private:
     }
 
     bool connected = false;
-    boost::asio::io_service& ios;
+    detail::BoostAsioLib::ContextType& ios;
     const std::string host;
     const std::string port;
 

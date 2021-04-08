@@ -1,6 +1,6 @@
 ################################################################################
 # ARICPP - ARI interface for C++
-# Copyright (C) 2021 Daniele Pallastrelli
+# Copyright (C) 2017-2021 Daniele Pallastrelli
 #
 # Boost Software License - Version 1.0 - August 17th, 2003
 #

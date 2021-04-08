@@ -1,6 +1,6 @@
 /*******************************************************************************
  * ARICPP - ARI interface for C++
- * Copyright (C) 2017 Daniele Pallastrelli
+ * Copyright (C) 2017-2021 Daniele Pallastrelli
  *
  * This file is part of aricpp.
  * For more information, see http://github.com/daniele77/aricpp
@@ -83,7 +83,12 @@ int main( int argc, char* argv[] )
             return 0;
         }
 
-        boost::asio::io_service ios;
+#if BOOST_VERSION < 106600
+        using IoContext = boost::asio::io_service;
+#else
+        using IoContext = boost::asio::io_context;
+#endif
+        IoContext ios;
 
         Client client( ios, host, port, username, password, application );
         client.Connect( [&](boost::system::error_code ){
@@ -115,7 +120,12 @@ int main( int argc, char* argv[] )
                     {
                         client.RawCmd(Method::put, url, [](auto,auto,auto,auto){});
                     };
-                ios.post( sendRequest );
+
+#if BOOST_VERSION < 106600
+                ios.post(sendRequest);
+#else
+                boost::asio::post(ios.get_executor(), sendRequest);
+#endif
             }
             cout << "Exiting application\n";
             ios.stop();

@@ -30,19 +30,23 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef ARICPP_ERRORS_H_
-#define ARICPP_ERRORS_H_
+#ifndef ARICPP_DETAIL_BOOSTASIOLIB_H_
+#define ARICPP_DETAIL_BOOSTASIOLIB_H_
 
-namespace aricpp
-{
+/**
+ * This header file provides the class `aricpp::BoostAsioLib`, using the right
+ * implementation according to the version of boost libraries included.
+ */
 
-enum class Error
-{
-    none,
-    network,
-    unknown
-};
+#include <boost/version.hpp>
 
-} // namespace aricpp
-
+#if BOOST_VERSION < 106600
+    #include "oldboostasiolib.h"
+    namespace aricpp { namespace detail { using BoostAsioLib = OldBoostAsioLib; } }
+#else
+    #include "newboostasiolib.h"
+    namespace aricpp { namespace detail { using BoostAsioLib = NewBoostAsioLib; } }
 #endif
+
+#endif // ARICPP_DETAIL_BOOSTASIOLIB_H_
+

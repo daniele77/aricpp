@@ -1,6 +1,6 @@
 /*******************************************************************************
  * ARICPP - ARI interface for C++
- * Copyright (C) 2020 Daniele Pallastrelli
+ * Copyright (C) 2017-2021 Daniele Pallastrelli
  *
  * This file is part of aricpp.
  * For more information, see http://github.com/daniele77/aricpp
@@ -87,7 +87,12 @@ int main(int argc, char* argv[])
             return 0;
         }
 
-        boost::asio::io_service ios;
+#if BOOST_VERSION < 106600
+        using IoContext = boost::asio::io_service;
+#else
+        using IoContext = boost::asio::io_context;
+#endif
+        IoContext ios;
 
         // Register to handle the signals that indicate when the server should exit.
         // It is safe to register for the same signal multiple times in a program,

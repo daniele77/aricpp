@@ -1,6 +1,6 @@
 /*******************************************************************************
  * ARICPP - ARI interface for C++
- * Copyright (C) 2017 Daniele Pallastrelli
+ * Copyright (C) 2017-2021 Daniele Pallastrelli
  *
  * This file is part of aricpp.
  * For more information, see http://github.com/daniele77/aricpp
@@ -37,8 +37,8 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
-#include <boost/asio.hpp>
 
+#include "detail/boostasiolib.h"
 #include "httpclient.h"
 #include "jsontree.h"
 #include "websocket.h"
@@ -60,8 +60,8 @@ public:
     using ConnectHandler = std::function<void(boost::system::error_code)>;
     using EventHandler = std::function<void(const JsonTree&)>;
 
-    Client( boost::asio::io_service& ios, const std::string& host, const std::string& port,
-            std::string _user, std::string _password, std::string _application ) :
+    Client(detail::BoostAsioLib::ContextType& ios, const std::string& host, const std::string& port,
+           std::string _user, std::string _password, std::string _application ) :
         user(std::move(_user)), password(std::move(_password)),
         application(std::move(_application)),
         websocket( ios, host, port ),

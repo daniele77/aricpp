@@ -1,6 +1,6 @@
 ################################################################################
 # ARICPP - ARI interface for C++
-# Copyright (C) 2021 Daniele Pallastrelli
+# Copyright (C) 2017-2021 Daniele Pallastrelli
 #
 # Boost Software License - Version 1.0 - August 17th, 2003
 #
@@ -78,7 +78,7 @@ target_include_directories(aricpp
 
 target_link_libraries(aricpp INTERFACE Threads::Threads)
 target_link_libraries(aricpp INTERFACE Boost::system)
-# target_compile_definitions(aricpp INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
+target_compile_definitions(aricpp INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
 target_compile_features(aricpp INTERFACE cxx_std_14)
 
 # Examples

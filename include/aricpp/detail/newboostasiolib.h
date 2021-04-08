@@ -30,19 +30,57 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef ARICPP_ERRORS_H_
-#define ARICPP_ERRORS_H_
+#ifndef ARICPP_DETAIL_NEWBOOSTASIOLIB_H_
+#define ARICPP_DETAIL_NEWBOOSTASIOLIB_H_
+
+#include <boost/version.hpp>
+#include <boost/asio.hpp>
 
 namespace aricpp
 {
-
-enum class Error
+namespace detail
 {
-    none,
-    network,
-    unknown
+
+namespace asiolib = boost::asio;
+namespace asiolibec = boost::system;
+
+class NewBoostAsioLib
+{
+public:
+
+    using ContextType = boost::asio::io_context;
+
+    class Executor
+    {
+    public:
+        explicit Executor(ContextType& ios) :
+            executor(ios.get_executor()) {}
+        explicit Executor(boost::asio::ip::tcp::socket& socket) :
+            executor(socket.get_executor()) {}
+        template <typename T> void Post(T&& t) { boost::asio::post(executor, std::forward<T>(t)); }
+    private:
+#if BOOST_VERSION >= 107400
+    using AsioExecutor = boost::asio::any_io_executor;
+#else
+    using AsioExecutor = boost::asio::executor;
+#endif
+         AsioExecutor executor;
+    };
+
+    static boost::asio::ip::address IpAddressFromString(const std::string& address)
+    {
+        return boost::asio::ip::make_address(address);
+    }
+
+    static auto MakeWorkGuard(ContextType& context)
+    {
+        return boost::asio::make_work_guard(context);
+    }
+
 };
 
+} // namespace detail
 } // namespace aricpp
 
-#endif
+#endif // ARICPP_DETAIL_NEWBOOSTASIOLIB_H_
+
