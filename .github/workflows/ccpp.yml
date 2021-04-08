@@ -9,19 +9,33 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: setup dependencies
+    - name: setup dependencies old boost
       run: |
         sudo apt-get remove 'libboost-.*'
         sudo apt-get -y update
-        mkdir tmp
-        cd tmp
-        wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
-        tar xzvf boost_1_69_0.tar.gz
-        cd boost_1_69_0
+        rm -rf tmp && mkdir tmp && cd tmp
+        wget https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz
+        tar xzvf boost_1_66_0.tar.gz
+        cd boost_1_66_0
         ./bootstrap.sh --prefix=/usr/
         ./b2
         sudo ./b2 install
-    - name: make
+    - name: make old boost
+      run: |
+        cd examples
+        make
+    - name: setup dependencies new boost
+      run: |
+        sudo apt-get remove 'libboost-.*'
+        sudo apt-get -y update
+        rm -rf tmp && mkdir tmp && cd tmp
+        wget https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.gz
+        tar xzvf boost_1_75_0.tar.gz
+        cd boost_1_75_0
+        ./bootstrap.sh --prefix=/usr/
+        ./b2
+        sudo ./b2 install
+    - name: make new boost
       run: |
         cd examples
         make

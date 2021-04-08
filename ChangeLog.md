@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Version 1.0.1 - 2021-04-08
 
 - Compiles again with boost libraries v. 1.66.0. Fixes [#45](https://github.com/daniele77/aricpp/issues/45) 
 - Update to new boost asio versions. Fixes [#41](https://github.com/daniele77/aricpp/issues/41) 
