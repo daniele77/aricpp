@@ -23,6 +23,13 @@ jobs:
     - name: make old boost
       run: |
         cd examples
+        make clean
+        make
+    - name: cmake old boost
+      run: |
+        rm -rf build
+        mkdir build && cd build
+        cmake .. -DARICPP_BuildExamples=ON -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wundef -Werror"
         make
     - name: setup dependencies new boost
       run: |
@@ -38,4 +45,11 @@ jobs:
     - name: make new boost
       run: |
         cd examples
+        make clean
+        make
+    - name: cmake new boost
+      run: |
+        rm -rf build
+        mkdir build && cd build
+        cmake .. -DARICPP_BuildExamples=ON -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wundef -Werror"
         make
