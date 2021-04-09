@@ -312,7 +312,7 @@ int main(int argc, char* argv[])
         CallContainer calls(application, channels, moh, autoAns, sipCh);
 
         client.Connect(
-            [&](boost::system::error_code e)
+            [](boost::system::error_code e)
             {
                 if (e)
                 {
@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
             10s /* reconnection seconds */);
         ios.run();
     }
-    catch (exception& e)
+    catch (const exception& e)
     {
         cerr << "Exception in app: " << e.what() << ". Aborting\n";
         return -1;

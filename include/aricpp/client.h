@@ -115,7 +115,10 @@ private:
             [this](const std::string& msg, auto e)
             {
                 if (e)
-                    std::cerr << "Error ws receive: " << e.message() << std::endl; // TODO remove print
+                {
+                    // std::cerr << "Error ws receive: " << e.message() << std::endl;
+                    onConnection(e);
+                }
                 else
                     this->RawEvent(msg); // gcc requires this
             });

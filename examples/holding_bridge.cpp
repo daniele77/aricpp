@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
 
         ios.run();
     }
-    catch (exception& e)
+    catch (const exception& e)
     {
         cerr << "Exception in app: " << e.what() << ". Aborting\n";
         return -1;

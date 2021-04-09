@@ -429,7 +429,7 @@ int main(int argc, char* argv[])
         CallContainer calls(application, client);
 
         client.Connect(
-            [&](boost::system::error_code e)
+            [](boost::system::error_code e)
             {
                 if (e)
                 {
@@ -442,7 +442,7 @@ int main(int argc, char* argv[])
 
         ios.run();
     }
-    catch (exception& e)
+    catch (const exception& e)
     {
         cerr << "Exception in app: " << e.what() << ". Aborting\n";
         return -1;
