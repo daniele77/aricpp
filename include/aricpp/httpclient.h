@@ -42,11 +42,15 @@
 #include "basicauth.h"
 #include "method.h"
 
-//#define ARICPP_TRACE_HTTP
-//#define ARICPP_HTTP_TIMEOUT
+// #define ARICPP_TRACE_HTTP
+// #define ARICPP_HTTP_TIMEOUT
 
 #ifdef ARICPP_HTTP_TIMEOUT
 #include <boost/asio/steady_timer.hpp>
+#endif
+
+#ifdef ARICPP_TRACE_HTTP
+#include <iostream>
 #endif
 
 namespace aricpp
@@ -186,7 +190,7 @@ private:
     {
 #ifdef ARICPP_HTTP_TIMEOUT
         using namespace std::chrono_literals;
-        timer.expires_from_now(500ms);
+        timer.expires_after(500ms);
         timer.async_wait(
             [](boost::system::error_code e)
             {

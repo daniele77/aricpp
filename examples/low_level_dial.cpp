@@ -105,7 +105,7 @@ public:
     Call(Client& c, const string& dialingCh, const string& dialedCh) : client(&c), dialing(dialingCh), dialed(dialedCh)
     {
 #ifdef CALL_TRACE
-        cout << "Call dialing " << dialing << " dialed " << dialed << "created\n";
+        cout << "Call dialing " << dialing << " dialed " << dialed << " created\n";
 #endif
     }
 #ifdef CALL_TRACE
@@ -230,7 +230,8 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c) : application(app), connection(c)
+    CallContainer(const string& app, Client& c, bool sipCh) : 
+        application(app), connection(c), chPrefix(CalcChPrefix(sipCh))
     {
         connection.OnEvent(
             "StasisStart",
@@ -291,6 +292,8 @@ public:
 private:
     using CallIt = list<Call>::iterator;
 
+    static string CalcChPrefix(bool sipCh) { return sipCh ? "sip/" : "pjsip/"; }
+
     void DialingChannel(const JsonTree& ev)
     {
         const string callingId = Get<string>(ev, {"channel", "id"});
@@ -310,7 +313,7 @@ private:
        connection.RawCmd(
             Method::post,
             "/ari/channels?"
-            "endpoint=sip/" + ext +
+            "endpoint=" + chPrefix + ext +
             "&app=" + application +
             "&channelId=" + dialedId +
             "&callerId=" + callerName +
@@ -361,6 +364,7 @@ private:
     Client& connection;
     list<Call> calls;
     unsigned long long nextId = 0;
+    const std::string chPrefix;
 };
 
 int main(int argc, char* argv[])
@@ -372,6 +376,7 @@ int main(int argc, char* argv[])
         string username = "asterisk";
         string password = "asterisk";
         string application = "attendant";
+        bool sipCh = false; // default = pjsip channel
 
         namespace po = boost::program_options;
         po::options_description desc("Allowed options");
@@ -384,6 +389,7 @@ int main(int argc, char* argv[])
             ("username,u", po::value(&username), ("username of the ARI account on the server ["s + username + "]").c_str())
             ("password,p", po::value(&password), ("password of the ARI account on the server ["s + password + "]").c_str())
             ("application,a", po::value(&application), ("stasis application to use ["s + application + "]").c_str())
+            ("sip-channel,S", po::bool_switch(&sipCh), ("use old sip channel instead of pjsip channel ["s + to_string(sipCh) + "]").c_str())
         ;
 
         po::variables_map vm;
@@ -426,7 +432,7 @@ int main(int argc, char* argv[])
             });
 
         Client client(ios, host, port, username, password, application);
-        CallContainer calls(application, client);
+        CallContainer calls(application, client, sipCh);
 
         client.Connect(
             [](boost::system::error_code e)

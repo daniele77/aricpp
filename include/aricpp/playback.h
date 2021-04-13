@@ -52,7 +52,7 @@ public:
 
     const std::string& Id() const { return id; }
 
-    Proxy& Stop()
+    Proxy Stop()
     {
         if (id.empty()) return Proxy::CreateEmpty();
 

@@ -1,8 +1,9 @@
 # Changelog
 
-## Uversioned
+## Unversioned
 
 - The disconnection handler is called also if reconnection is not enabled. Fixes [#47](https://github.com/daniele77/aricpp/issues/47) 
+- Possibly usage of a dangling reference in method chain proxy. Fixes [#48](https://github.com/daniele77/aricpp/issues/48) 
 
 ## Version 1.0.1 - 2021-04-08
 

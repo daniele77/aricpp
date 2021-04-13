@@ -128,7 +128,7 @@ public:
     /// Destroy the object and the asterisk bridge
     ~Bridge() { Destroy(); }
 
-    Proxy& Add(const Channel& ch, bool mute=false, const Role& role=Role::participant)
+    Proxy Add(const Channel& ch, bool mute=false, const Role& role=Role::participant)
     {
         return Proxy::Command(
             Method::post,
@@ -140,7 +140,7 @@ public:
         );
     }
 
-    Proxy& Add(std::initializer_list<const Channel*> chs)
+    Proxy Add(std::initializer_list<const Channel*> chs)
     {
         std::string req = "/ari/bridges/" + id + "/addChannel?channel=";
         for (auto ch : chs)
@@ -149,7 +149,7 @@ public:
         return Proxy::Command(Method::post, req, client);
     }
 
-    Proxy& Remove(const Channel& ch)
+    Proxy Remove(const Channel& ch)
     {
         return Proxy::Command(
             Method::post,
@@ -159,21 +159,21 @@ public:
         );
     }
 
-    Proxy& StartMoh(const std::string& mohClass={})
+    Proxy StartMoh(const std::string& mohClass={})
     {
         std::string query = "/ari/bridges/" + id + "/moh";
         if ( !mohClass.empty() ) query += "?mohClass" + mohClass;
         return Proxy::Command(Method::post, query, client);
     }
 
-    Proxy& StopMoh()
+    Proxy StopMoh()
     {
         return Proxy::Command(Method::delete_, "/ari/bridges/" + id + "/moh", client);
     }
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the Play method with std::chrono parameters instead")]]
-    ProxyPar<Playback>& Play(const std::string& media, const std::string& lang,
+    ProxyPar<Playback> Play(const std::string& media, const std::string& lang,
                              int offsetms, int skipms=-1) const
     {
         if (offsetms == -1) offsetms = 0;
@@ -181,7 +181,7 @@ public:
         return Play(media, lang, std::chrono::milliseconds(offsetms), std::chrono::milliseconds(skipms));
     }
 #endif // ARICPP_DEPRECATED_API
-    ProxyPar<Playback>& Play(const std::string& media,
+    ProxyPar<Playback> Play(const std::string& media,
                              const std::string& lang={},
                              const std::chrono::milliseconds& offset = std::chrono::milliseconds::zero(),
                              const std::chrono::milliseconds& skip = std::chrono::milliseconds::zero()
@@ -203,7 +203,7 @@ public:
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the Record method with std::chrono parameters instead")]]
-    ProxyPar<Recording>& Record(const std::string& name, const std::string& format,
+    ProxyPar<Recording> Record(const std::string& name, const std::string& format,
                   int maxDurationSeconds, int maxSilenceSeconds=-1,
                   const std::string& ifExists={}, bool beep=false, const TerminationDtmf& terminateOn=TerminationDtmf::none) const
     {
@@ -213,7 +213,7 @@ public:
     }
 #endif // ARICPP_DEPRECATED_API
 
-    ProxyPar<Recording>& Record(
+    ProxyPar<Recording> Record(
         const std::string& name,
         const std::string& format,
         const std::chrono::seconds& maxDuration = std::chrono::seconds::zero(),
@@ -239,7 +239,7 @@ public:
         );
     }
 
-    Proxy& Destroy()
+    Proxy Destroy()
     {
         if ( IsDead() ) return Proxy::CreateEmpty();
         isDead = true;

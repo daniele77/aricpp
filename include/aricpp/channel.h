@@ -113,7 +113,7 @@ public:
         StateChanged(_state);
     }
     
-    Proxy& Move(const std::string& app, const std::string& appArgs={}) const {
+    Proxy Move(const std::string& app, const std::string& appArgs={}) const {
         return Proxy::Command(
             Method::post,
             "/ari/channels/"+id+"/move?"
@@ -123,17 +123,17 @@ public:
         );
     }
 
-    Proxy& Ring() const
+    Proxy Ring() const
     {
         return Proxy::Command(Method::post, "/ari/channels/"+id+"/ring", client);
     }
 
-    Proxy& RingStop() const
+    Proxy RingStop() const
     {
         return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/ring", client);
     }
 
-    Proxy& Mute(const Direction& dir=Direction::both) const
+    Proxy Mute(const Direction& dir=Direction::both) const
     {
         return Proxy::Command(
             Method::post,
@@ -143,7 +143,7 @@ public:
         );
     }
 
-    Proxy& Unmute(const Direction& dir=Direction::both) const
+    Proxy Unmute(const Direction& dir=Direction::both) const
     {
         return Proxy::Command(
             Method::delete_,
@@ -153,56 +153,56 @@ public:
         );
     }
 
-    Proxy& Hold() const
+    Proxy Hold() const
     {
         return Proxy::Command(Method::post, "/ari/channels/"+id+"/hold", client);
     }
 
-    Proxy& Unhold() const
+    Proxy Unhold() const
     {
         return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/hold", client);
     }
 
-    Proxy& Silence() const
+    Proxy Silence() const
     {
         return Proxy::Command(Method::post, "/ari/channels/"+id+"/silence", client);
     }
 
-    Proxy& StopSilence() const
+    Proxy StopSilence() const
     {
         return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/silence", client);
     }
 
-    Proxy& StartMoh(const std::string& mohClass={}) const
+    Proxy StartMoh(const std::string& mohClass={}) const
     {
         std::string query = "/ari/channels/"+id+"/moh";
         if (!mohClass.empty()) query += "?mohClass=" + mohClass;
         return Proxy::Command(Method::post, query, client);
     }
 
-    Proxy& StopMoh() const
+    Proxy StopMoh() const
     {
         return Proxy::Command(Method::delete_, "/ari/channels/"+id+"/moh", client);
     }
 
-    Proxy& Answer() const
+    Proxy Answer() const
     {
         return Proxy::Command(Method::post, "/ari/channels/"+id+"/answer", client);
     }
 
-    Proxy& Hangup() const
+    Proxy Hangup() const
     {
         return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
     
-    Proxy& Continue() const
+    Proxy Continue() const
     {
         return Proxy::Command(Method::post, "/ari/channels/" + id + "/continue", client);
     }
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the method Dial instead")]]
-    Proxy& Call(
+    Proxy Call(
         const std::string& endpoint,
         const std::string& application,
         const std::string& callerId,
@@ -222,9 +222,9 @@ public:
      * @param callerId CallerID to use for the call
      * @param variables Holds variable key/value pairs to set on the channel on creation
                         (e.g., {"CALLERID(name)":"Alice", "VAR2":"Value"} )
-     * @return Proxy& You can call After() and OnError() on the returned object
+     * @return Proxy You can call After() and OnError() on the returned object
      */
-    Proxy& Dial(
+    Proxy Dial(
         const std::string& endpoint,
         const std::string& application,
         const std::string& callerId,
@@ -252,7 +252,7 @@ public:
      * @param application The stasis application that is subscribed to the originated channel.
      *                    When the channel is answered, it will be passed to this Stasis application.
      */
-    Proxy& Create(const std::string& endpoint, const std::string& application) const
+    Proxy Create(const std::string& endpoint, const std::string& application) const
     {
         return Proxy::Command(
             Method::post,
@@ -268,9 +268,9 @@ public:
     /**
      * @brief Dial an asterisk channel previously created with Channel::Create
      *
-     * @return Proxy& You can call After() and OnError() on the returned object
+     * @return Proxy You can call After() and OnError() on the returned object
      */
-    Proxy& Dial() const
+    Proxy Dial() const
     {
         return Proxy::Command(
             Method::post,
@@ -279,7 +279,7 @@ public:
         );
     }
 
-    Proxy& Redirect(const std::string& endpoint) const
+    Proxy Redirect(const std::string& endpoint) const
     {
         return Proxy::Command(
             Method::post,
@@ -289,7 +289,7 @@ public:
         );
     }
 
-    Proxy& SendDtmf(const std::string& dtmf, int between=-1, int duration=-1, int before=-1, int after=-1) const
+    Proxy SendDtmf(const std::string& dtmf, int between=-1, int duration=-1, int before=-1, int after=-1) const
     {
         return Proxy::Command(
             Method::post,
@@ -305,7 +305,7 @@ public:
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the Play method with std::chrono parameters instead")]]
-    ProxyPar<Playback>& Play(const std::string& media, const std::string& lang,
+    ProxyPar<Playback> Play(const std::string& media, const std::string& lang,
                 const std::string& playbackId, int offsetms, int skipms=-1) const
     {
         if (offsetms == -1) offsetms = 0;
@@ -314,7 +314,7 @@ public:
     }
 #endif
 
-    ProxyPar<Playback>& Play(const std::string& media,
+    ProxyPar<Playback> Play(const std::string& media,
                              const std::string& lang={},
                              const std::string& playbackId={},
                              const std::chrono::milliseconds& offset = std::chrono::milliseconds::zero(),
@@ -338,7 +338,7 @@ public:
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the Record method with std::chrono parameters instead")]]
-    ProxyPar<Recording>& Record(const std::string& _name, const std::string& format,
+    ProxyPar<Recording> Record(const std::string& _name, const std::string& format,
                   int maxDurationSeconds, int maxSilenceSeconds=-1,
                   const std::string& ifExists={}, bool beep=false, const TerminationDtmf& terminateOn=TerminationDtmf::none) const
     {
@@ -348,7 +348,7 @@ public:
     }
 #endif // ARICPP_DEPRECATED_API
 
-    ProxyPar<Recording>& Record(
+    ProxyPar<Recording> Record(
         const std::string& _name,
         const std::string& format,
         const std::chrono::seconds& maxDuration = std::chrono::seconds::zero(),
@@ -374,7 +374,7 @@ public:
         );
     }
 
-    Proxy& SetVar(const std::string& var, const std::string& value={}) const
+    Proxy SetVar(const std::string& var, const std::string& value={}) const
     {
         std::string query = "/ari/channels/" + id + "/variable?"
                                   "variable=" + UrlEncode(var);
@@ -382,14 +382,14 @@ public:
         return Proxy::Command(Method::post, query, client);
     }
 
-    ProxyPar<std::string>& GetVar(const std::string& var) const
+    ProxyPar<std::string> GetVar(const std::string& var) const
     {
         const std::string query = "/ari/channels/"+id+"/variable";
         const std::string body = R"({"variable":")"+var+"\"}";
-        return ProxyPar<std::string>::Command(Method::get, query, client, body);
+        return ProxyPar<std::string>::Command(Method::get, query, client, {}, body);
     }
 
-    Proxy& Snoop(const std::string& app, const Direction& spy=Direction::none, const Direction& whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
+    Proxy Snoop(const std::string& app, const Direction& spy=Direction::none, const Direction& whisper=Direction::none, const std::string& appArgs={}, const std::string& snoopId={}) const
     {
         return Proxy::Command(
             Method::post,

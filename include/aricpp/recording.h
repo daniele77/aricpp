@@ -50,43 +50,43 @@ public:
     Recording& operator=(const Recording&) = default;
     Recording& operator=(Recording&&) = default;
 
-    Proxy& Delete()
+    Proxy Delete()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::delete_, "/ari/recordings/stored/" + name, client);
     }
 
-    Proxy& Abort()
+    Proxy Abort()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::delete_, "/ari/recordings/live/" + name, client);
     }
 
-    Proxy& Stop()
+    Proxy Stop()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::post, "/ari/recordings/live/" + name + "/stop", client);
     }
 
-    Proxy& Mute()
+    Proxy Mute()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::post, "/ari/recordings/live/" + name + "/mute", client);
     }
 
-    Proxy& Unmute()
+    Proxy Unmute()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::delete_, "/ari/recordings/live/" + name + "/stop", client);
     }
 
-    Proxy& Pause()
+    Proxy Pause()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::post, "/ari/recordings/live/" + name + "/pause", client);
     }
 
-    Proxy& Resume()
+    Proxy Resume()
     {
         if (name.empty()) return Proxy::CreateEmpty();
         return Proxy::Command(Method::delete_, "/ari/recordings/live/" + name + "/pause", client);
