@@ -109,8 +109,8 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, AriModel& m, bool _moh, bool _autoAns, bool _sipCh) :
-        application(app),
+    CallContainer(string app, AriModel& m, bool _moh, bool _autoAns, bool _sipCh) :
+        application(move(app)),
         channels(m),
         moh(_moh),
         inviteVariables(CalcVariables(_autoAns, _sipCh)),
@@ -219,7 +219,7 @@ private:
         if (!autoAns) return {};
 
         if (sipCh)
-            return "{\"SIPADDHEADER0\":\"Call-Info:answer-after=0\"}";
+            return R"({"SIPADDHEADER0":"Call-Info:answer-after=0"})";
         else
             return "{\"PJSIP_HEADER(add,Call-info)\":\"answer-after=0\"}";
     }
@@ -234,10 +234,7 @@ private:
     const string chPrefix;
 };
 
-inline std::string to_string(bool b)
-{
-    return (b ? "true" : "false");
-}
+static std::string to_string(bool b) { return (b ? "true" : "false"); }
 
 int main(int argc, char* argv[])
 {

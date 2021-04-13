@@ -102,7 +102,8 @@ enum class ChMode
 class Call
 {
 public:
-    Call(Client& c, const string& dialingCh, const string& dialedCh) : client(&c), dialing(dialingCh), dialed(dialedCh)
+    Call(Client& c, string dialingCh, string dialedCh) : 
+        client(&c), dialing(move(dialingCh)), dialed(move(dialedCh))
     {
 #ifdef CALL_TRACE
         cout << "Call dialing " << dialing << " dialed " << dialed << " created\n";
@@ -230,8 +231,8 @@ private:
 class CallContainer
 {
 public:
-    CallContainer(const string& app, Client& c, bool sipCh) : 
-        application(app), connection(c), chPrefix(CalcChPrefix(sipCh))
+    CallContainer(string app, Client& c, bool sipCh) : 
+        application(move(app)), connection(c), chPrefix(CalcChPrefix(sipCh))
     {
         connection.OnEvent(
             "StasisStart",
@@ -366,6 +367,8 @@ private:
     unsigned long long nextId = 0;
     const std::string chPrefix;
 };
+
+static std::string to_string(bool b) { return (b ? "true" : "false"); }
 
 int main(int argc, char* argv[])
 {
