@@ -104,6 +104,8 @@ public:
     
     ~Channel()
     {
+        if (IsDead())
+            return;
         Hangup();
     }
 

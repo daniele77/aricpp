@@ -61,3 +61,4 @@ examples/play_and_record
 Debug
 Release
 /CMakeSettings.json
+doc/html
