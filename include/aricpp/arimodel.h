@@ -66,7 +66,7 @@ public:
     using ChHandler = std::function<void(ChannelPtr)>;
     using ChVarSetHandler = std::function<void(ChannelPtr, const std::string&, const std::string&)>;
     using ChDtmfHandler = std::function<void(ChannelPtr, const std::string&)>;
-    using PlaybackHandler = std::function<void(const Playback&)>;
+    using PlaybackHandler = std::function<void(Playback)>;
     using StasisStartedHandler = std::function<void(ChannelPtr, bool external)>;
 
     void OnChannelCreated(ChHandler handler) { chCreated = std::move(handler); }

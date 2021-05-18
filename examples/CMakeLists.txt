@@ -32,7 +32,7 @@ set(Boost_NO_BOOST_CMAKE ON)
 add_definitions(-DBOOST_ALL_DYN_LINK -DBOOST_UUID_FORCE_AUTO_LINK) # for windows: play_and_record uses boost uuid
 find_package(Boost 1.66 REQUIRED COMPONENTS program_options REQUIRED)
 
-set(SOURCES low_level_dial high_level_dial chat query holding_bridge play_and_record)
+set(SOURCES low_level_dial high_level_dial chat query holding_bridge play_and_record auto_attendant)
 
 foreach(example ${SOURCES})
     add_executable(${example} ${example}.cpp)

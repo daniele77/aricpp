@@ -1,5 +1,11 @@
 # Changelog
 
+## Unversioned
+
+ - Channel dtor does not issue an hangup anymore when the channel is dead already
+ - PlaybackHandler passed by value in event handlers
+ - New example that playes a music file on answer call
+
 ## Version 1.1.0 - 2021-04-13
 
 - The disconnection handler is called also if reconnection is not enabled. Fixes [#47](https://github.com/daniele77/aricpp/issues/47) 

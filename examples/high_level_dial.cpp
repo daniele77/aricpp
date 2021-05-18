@@ -318,7 +318,8 @@ int main(int argc, char* argv[])
                 else
                     cout << "Connected" << endl;
             },
-            10s /* reconnection seconds */);
+            10s // reconnection seconds
+        );
         ios.run();
     }
     catch (const exception& e)

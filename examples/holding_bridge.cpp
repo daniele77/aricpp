@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
         if (vm.count("version"))
         {
-            cout << "This is dial holding_bridge v. 1.0, part of aricpp library\n";
+            cout << "This is holding_bridge v. 1.0, part of aricpp library\n";
             return 0;
         }
 
