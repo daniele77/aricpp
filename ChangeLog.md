@@ -1,6 +1,6 @@
 # Changelog
 
-## Unversioned
+## Version 1.1.1 - 2021-05-18
 
  - Channel dtor does not issue an hangup anymore when the channel is dead already
  - PlaybackHandler passed by value in event handlers
