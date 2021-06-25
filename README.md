@@ -17,8 +17,8 @@ Asterisk ARI interface bindings for modern C++
 
 ## How to get ARICPP library
 
-* From GitHub
-* Using Vcpkg
+* From [GitHub](https://github.com/daniele77/aricpp/releases)
+* Using [Vcpkg](https://github.com/Microsoft/vcpkg)
 
 ## Requirements
 
