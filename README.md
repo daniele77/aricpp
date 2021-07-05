@@ -15,6 +15,11 @@ Asterisk ARI interface bindings for modern C++
 * Fluent interface
 * Efficient (tested with sipp traffic generator)
 
+## How to get ARICPP library
+
+* From [GitHub](https://github.com/daniele77/aricpp/releases)
+* Using [Vcpkg](https://github.com/Microsoft/vcpkg)
+
 ## Requirements
 
 aricpp requires a c++14 compiler, and relies on the boost libraries (v. 1.66.0 or later).
