@@ -307,18 +307,16 @@ public:
 
 #ifdef ARICPP_DEPRECATED_API
     [[deprecated("Use the Play method with std::chrono parameters instead")]]
-    ProxyPar<Playback> Play(const std::string& media, const std::string& lang,
-                const std::string& playbackId, int offsetms, int skipms=-1) const
+    ProxyPar<Playback> Play(const std::string& media, const std::string& lang, int offsetms, int skipms=-1) const
     {
         if (offsetms == -1) offsetms = 0;
         if (skipms == -1) skipms = 0;
-        return Play(media, lang, playbackId, std::chrono::milliseconds(offsetms), std::chrono::milliseconds(skipms));
+        return Play(media, lang, std::chrono::milliseconds(offsetms), std::chrono::milliseconds(skipms));
     }
 #endif
 
     ProxyPar<Playback> Play(const std::string& media,
                              const std::string& lang={},
-                             const std::string& playbackId={},
                              const std::chrono::milliseconds& offset = std::chrono::milliseconds::zero(),
                              const std::chrono::milliseconds& skip = std::chrono::milliseconds::zero()
     ) const
@@ -330,7 +328,6 @@ public:
             "media=" + UrlEncode(media) +
             "&playbackId=" + playback.Id() +
             ( lang.empty() ? "" : "&lang=" + lang ) +
-            ( playbackId.empty() ? "" : "&playbackId=" + playbackId ) +
             ( offset == std::chrono::milliseconds::zero() ? "" : ("&offsetms=" + std::to_string(offset.count())) ) +
             ( skip == std::chrono::milliseconds::zero() ? "" : ("&skipms=" + std::to_string(skip.count())) ),
             client,

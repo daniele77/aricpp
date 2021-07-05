@@ -1,10 +1,14 @@
 # Changelog
 
+## Unversioned
+
+ - Fix passing two times the playback id in Channel::Play 
+
 ## Version 1.1.1 - 2021-05-18
 
- - Channel dtor does not issue an hangup anymore when the channel is dead already
+ - Channel dtor does not issue a hangup anymore when the channel is dead already
  - PlaybackHandler passed by value in event handlers
- - New example that playes a music file on answer call
+ - New example that plays a music file on answer call
 
 ## Version 1.1.0 - 2021-04-13
 

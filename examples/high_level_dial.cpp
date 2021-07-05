@@ -206,8 +206,7 @@ private:
 
     void Remove(const shared_ptr<Call>& call) { calls.erase(remove(calls.begin(), calls.end(), call), calls.end()); }
 
-    // return the index of the call in the vector.
-    // return calls.size() if not found
+    // return empty shared_ptr if not found
     shared_ptr<Call> FindCallByChannel(const shared_ptr<Channel> ch, ChMode mode) const
     {
         auto c = find_if(calls.begin(), calls.end(), [&](auto call) { return call->HasChannel(*ch, mode); });
