@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 
         namespace po = boost::program_options;
         po::options_description desc("Allowed options");
-         desc.add_options()
+        desc.add_options()
             ("help,h", "produce help message")
             ("version,V", "print version string")
 
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
             ("application,a", po::value(&application), ("stasis application to use ["s + application + "]").c_str())
             ("sip-channel,S", po::bool_switch(&sipCh), ("use old sip channel instead of pjsip channel ["s + to_string(sipCh) + "]").c_str())
         ;
-        
+
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
@@ -218,8 +218,8 @@ int main(int argc, char* argv[])
                 else
                     cout << "Connected" << endl;
             },
-            10s /* reconnection seconds */);
-
+            10s // reconnection seconds
+        );
         ios.run();
     }
     catch (const exception& e)

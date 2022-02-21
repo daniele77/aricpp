@@ -31,7 +31,7 @@
 ################################################################################
 
 #define macros
-EXE_NAMES = high_level_dial.exe low_level_dial.exe chat.exe query.exe holding_bridge.exe play_and_record.exe auto_attendant.exe
+EXE_NAMES = high_level_dial.exe low_level_dial.exe chat.exe query.exe holding_bridge.exe play_and_record.exe digitsequence.exe auto_attendant.exe
 DIR_INCLUDE = /I..\.. /I%BOOST%
 DIR_LINK = %BOOST%\stage\lib
 COMPILE_FLAGS = /nologo /MD /EHsc /D_WIN32_WINNT=0x0501 /DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE

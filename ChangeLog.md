@@ -1,8 +1,10 @@
 # Changelog
 
-## Unversioned
+## Version 1.1.2 - 2022-02-21
 
- - Fix passing two times the playback id in Channel::Play 
+ - Fix Channel recording would not stop. Fixes [#47](https://github.com/daniele77/aricpp/issues/60)
+ - Fix passing two times the playback id in Channel::Play
+ - Add digitsequence new example
 
 ## Version 1.1.1 - 2021-05-18
 

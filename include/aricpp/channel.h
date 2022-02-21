@@ -348,7 +348,7 @@ public:
 #endif // ARICPP_DEPRECATED_API
 
     ProxyPar<Recording> Record(
-        const std::string& _name,
+        const std::string& recName,
         const std::string& format,
         const std::chrono::seconds& maxDuration = std::chrono::seconds::zero(),
         const std::chrono::seconds& maxSilence = std::chrono::seconds::zero(),
@@ -357,11 +357,11 @@ public:
         const TerminationDtmf& terminateOn=TerminationDtmf::none
     ) const
     {
-        Recording recording(name, client);
+        Recording recording(recName, client);
         return ProxyPar<Recording>::Command(
             Method::post,
             "/ari/channels/"+id+"/record?"
-            "name=" + UrlEncode(_name) +
+            "name=" + UrlEncode(recName) +
             "&format=" + format +
             "&terminateOn=" + static_cast<std::string>(terminateOn) +
             ( beep ? "&beep=true" : "&beep=false" ) +

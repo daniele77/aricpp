@@ -29,7 +29,7 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(aricpp VERSION 1.1.1 LANGUAGES CXX)
+project(aricpp VERSION 1.1.2 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
