@@ -162,7 +162,7 @@ public:
     Proxy StartMoh(const std::string& mohClass={})
     {
         std::string query = "/ari/bridges/" + id + "/moh";
-        if ( !mohClass.empty() ) query += "?mohClass" + mohClass;
+        if ( !mohClass.empty() ) query += "?mohClass=" + mohClass;
         return Proxy::Command(Method::post, query, client);
     }
 
