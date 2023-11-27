@@ -1,8 +1,15 @@
 # Changelog
+All notable changes to this project will be documented in this file.
+
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## Version 1.1.3 - 2023-11-27
+
+ - Broke build with new version of boost beast. Fixes [#68](https://github.com/daniele77/aricpp/issues/68)
 
 ## Version 1.1.2 - 2022-02-21
 
- - Fix Channel recording would not stop. Fixes [#47](https://github.com/daniele77/aricpp/issues/60)
+ - Fix Channel recording would not stop. Fixes [#60](https://github.com/daniele77/aricpp/issues/60)
  - Fix passing two times the playback id in Channel::Play
  - Add digitsequence new example
 

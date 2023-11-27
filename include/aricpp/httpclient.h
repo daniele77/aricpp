@@ -217,7 +217,9 @@ private:
                     std::cout << "### <= " << resp.result() << " " << resp.reason() << '\n';
                     if (!resp.body().empty()) std::cout << "       " << resp.body() << '\n';
 #endif
-                    CallBack(e, resp.result(), resp.reason().to_string(), resp.body());
+                    auto reasonSv = resp.reason(); // std::string_view on old boost versions and boost::string_view on the newest
+                    std::string reason(reasonSv.begin(), reasonSv.end()); // this is the only conversion to std::sttring in common
+                    CallBack(e, resp.result(), reason, resp.body());
                 }
 
                 // in any case, clear the buffer and the response
