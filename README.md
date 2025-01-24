@@ -1,5 +1,7 @@
 ![C/C++ CI of aricpp](https://github.com/daniele77/aricpp/workflows/C/C++%20CI%20of%20aricpp/badge.svg)
 
+[:heart: Sponsor](https://github.com/sponsors/daniele77)
+
 # aricpp
 
 Asterisk ARI interface bindings for modern C++
@@ -242,3 +244,5 @@ Even if you just have questions,
 asking them in [GitHub Discussions](http://github.com/daniele77/aricpp/discussions)
 provides valuable information that can be used to improve the library - do not hesitate,
 no question is insignificant or unimportant!
+
+If you or your company uses Aricpp library, please consider becoming a sponsor to keep the project strong and dependable.
