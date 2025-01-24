@@ -198,13 +198,13 @@ public:
         return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
     
-    Proxy Continue(const std::string& context, const std::string& extension, const std::string& priority = {}) const
+    Proxy Continue(const std::string& context, const std::string& _extension, const std::string& priority = {}) const
     {
         return Proxy::Command(
             Method::post,
             "/ari/channels/" + id + "/continue?"
             "context=" + context +
-            "extension=" + extension +
+            "extension=" + _extension +
             ( priority.empty() ? "" : "&priority=" + priority ),
             client
         );
