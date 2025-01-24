@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
  - Add ChannelToneDetected eventhandler. PR #72(https://github.com/daniele77/aricpp/pull/72)
  - Add parameters to the function "continue"
+ - Add support to send and receive messages (SIP INFO)
 
 ## Version 1.1.3 - 2023-11-27
 

@@ -35,7 +35,7 @@
 #include <string>
 #include <thread>
 #include "../include/aricpp/client.h"
-#include "../include/aricpp/urlencode.h"
+#include "../include/aricpp/arimodel.h"
 
 using namespace std;
 using namespace aricpp;
@@ -51,6 +51,7 @@ int main( int argc, char* argv[] )
         string application = "attendant";
         string to = "291";
         string from = "290";
+        string tech = "pjsip";
 
         namespace po = boost::program_options;
         po::options_description desc("Allowed options");
@@ -63,6 +64,7 @@ int main( int argc, char* argv[] )
             ("username,u", po::value(&username), "username of the ARI account on the server [asterisk]")
             ("password,p", po::value(&password), "password of the ARI account on the server [asterisk]")
             ("application,a", po::value(&application), "stasis application to use [attendant]")
+            ("technology,T", po::value(&tech), "technology to use for the endpoints (pjsip, sip, xmpp) [pjsip]")
             ("from,f", po::value(&from), "source extension [290]")
             ("to,t", po::value(&to), "destination extension [291]")
         ;
@@ -91,16 +93,17 @@ int main( int argc, char* argv[] )
         IoContext ios;
 
         Client client( ios, host, port, username, password, application );
-        client.Connect( [&](boost::system::error_code ){
-
-            client.OnEvent( "TextMessageReceived", [&](const JsonTree& e){
-                auto src = Get<std::string>(e, {"message", "from"});
-                auto dest = Get<std::string>(e, {"message", "to"});
-                auto msg = Get<std::string>(e, {"message", "body"});
-
-                cout << "> Message from: " << src << " (for: " << dest << "):\n";
-                cout << msg << "\n\n";
-            });
+        AriModel model(client);
+        model.OnTextMessageReceived([](const std::string& src, const std::string& dest, const std::string& msg){
+            cout << "Message from: " << src << " (for: " << dest << "):\n";
+            cout << msg << "\n\n";
+        });
+        client.Connect( [&](boost::system::error_code e){
+            if (e)
+            {
+                std::cerr << "Cannot connect to asterisk. Aborting.\n";
+                exit(EXIT_FAILURE);
+            }
         });
 
         auto inputReader = [&]()
@@ -108,17 +111,16 @@ int main( int argc, char* argv[] )
             string msg;
             while (true)
             {
-                cout << "> Enter you message (quit to exit):\n";
+                cout << "Enter you message (quit to exit):\n> ";
                 getline( std::cin, msg );
                 if (msg == "exit" || msg == "quit") break;
                 if (msg.empty()) continue;
                 cout << "Sending " << msg << '\n';
-                msg = UrlEncode(msg);
-                auto url = "/ari/endpoints/sendMessage?to=sip:"+to+"&from=sip:"+from+"&body="+msg;
                 auto sendRequest =
-                    [&client,url]()
+                    [&model,from, to, msg, &tech]()
                     {
-                        client.RawCmd(Method::put, url, [](auto,auto,auto,auto){});
+                        model.SendTextMsg(tech + ':' + from, tech + ':' + to, msg)
+                             .OnError([](Error /*e*/, const string& errMsg){ std::cerr << "Error: " << errMsg << std::endl; });
                     };
 
 #if BOOST_VERSION < 106600

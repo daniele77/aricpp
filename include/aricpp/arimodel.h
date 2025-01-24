@@ -68,6 +68,7 @@ public:
     using ChToneDetectedHandler = std::function<void(ChannelPtr)>;
     using ChDtmfHandler = std::function<void(ChannelPtr, const std::string&)>;
     using PlaybackHandler = std::function<void(Playback)>;
+    using TextMessageHandler = std::function<void(const std::string& from, const std::string& to, const std::string& msg)>;
     using StasisStartedHandler = std::function<void(ChannelPtr, bool external)>;
 
     void OnChannelCreated(ChHandler handler) { chCreated = std::move(handler); }
@@ -77,8 +78,9 @@ public:
     void OnChannelToneDetected(ChToneDetectedHandler handler) { chToneDetected = std::move(handler); }
     void OnChannelDtmfReceived(ChDtmfHandler handler) { chDtmfReceived = std::move(handler); }
     void OnStasisStarted(StasisStartedHandler handler) { stasisStarted = std::move(handler); }
-    void OnPlaybackStarted(PlaybackHandler handler) { PlaybackStarted = std::move(handler); }
-    void OnPlaybackFinished(PlaybackHandler handler) { PlaybackFinished = std::move(handler); }
+    void OnPlaybackStarted(PlaybackHandler handler) { playbackStarted = std::move(handler); }
+    void OnPlaybackFinished(PlaybackHandler handler) { playbackFinished = std::move(handler); }
+    void OnTextMessageReceived(TextMessageHandler handler) { textMessageReceived = std::move(handler); }
 
     ChannelPtr CreateChannel()
     {
@@ -132,6 +134,18 @@ public:
                     h({});
                 }
             });
+    }
+
+    Proxy SendTextMsg(const std::string& from, const std::string& to, const std::string& msg)
+    {
+        return Proxy::Command(
+            Method::put,
+            "/ari/endpoints/sendMessage"
+                "?to=" + to + 
+                "&from=" + from +
+                "&body=" + UrlEncode(msg),
+            &client
+        );
     }
 
 private:
@@ -259,7 +273,7 @@ private:
                 const std::string target_uri = Get<std::string>(e, {"playback", "target_uri"});
                 const std::string language = Get<std::string>(e, {"playback", "language"});
                 const std::string state = Get<std::string>(e, {"playback", "state"});
-                if (PlaybackStarted) PlaybackStarted(Playback(id, &client));
+                if (playbackStarted) playbackStarted(Playback(id, &client));
             });
 
         client.OnEvent(
@@ -271,7 +285,17 @@ private:
                 const std::string target_uri = Get<std::string>(e, {"playback", "target_uri"});
                 const std::string language = Get<std::string>(e, {"playback", "language"});
                 const std::string state = Get<std::string>(e, {"playback", "state"});
-                if (PlaybackFinished) PlaybackFinished(Playback(id, &client));
+                if (playbackFinished) playbackFinished(Playback(id, &client));
+            });
+
+        client.OnEvent(
+            "TextMessageReceived",
+            [this](const JsonTree& e)
+            {
+                const std::string from = Get<std::string>(e, {"message", "from"});
+                const std::string to = Get<std::string>(e, {"message", "to"});
+                const std::string msg = Get<std::string>(e, {"message", "body"});
+                if (textMessageReceived) textMessageReceived(from, to, msg);
             });
     }
 
@@ -286,8 +310,9 @@ private:
     ChToneDetectedHandler chToneDetected;
     ChDtmfHandler chDtmfReceived;
     StasisStartedHandler stasisStarted;
-    PlaybackHandler PlaybackStarted;
-    PlaybackHandler PlaybackFinished;
+    PlaybackHandler playbackStarted;
+    PlaybackHandler playbackFinished;
+    TextMessageHandler textMessageReceived;
 };
 
 } // namespace aricpp
