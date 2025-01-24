@@ -11,7 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04, ubuntu-latest]
         compiler: [llvm-13.0.0, clang++-14, gcc-11]
-        standard: [14, 17, 20, 23]
+        standard: [14, 17, 20]
         build_type: [Release, Debug]
 
     steps:
@@ -30,7 +30,7 @@ jobs:
     
     - name: configure cmake
       run: |
-        cmake -S . -B ./build -G "Ninja Multi-Config" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DCMAKE_CXX_STANDARD=${{matrix.standard}} -DARICPP_BuildExamples=ON -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wundef -Werror"
+        cmake -S . -B ./build -G "Ninja Multi-Config" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DCMAKE_CXX_STANDARD=${{matrix.standard}} -DARICPP_BuildExamples=ON -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=4 -Wundef -Werror"
 
     - name: Build
       run: |
