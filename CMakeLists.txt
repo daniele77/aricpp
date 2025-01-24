@@ -79,7 +79,10 @@ target_include_directories(aricpp
 target_link_libraries(aricpp INTERFACE Threads::Threads)
 target_link_libraries(aricpp INTERFACE Boost::system)
 target_compile_definitions(aricpp INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
-target_compile_features(aricpp INTERFACE cxx_std_14)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+endif()
+target_compile_features(aricpp INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
 # Examples
 if (ARICPP_BuildExamples)

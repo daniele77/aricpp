@@ -3,24 +3,73 @@ name: CI of aricpp
 on: [push,pull_request]
 
 jobs:
-  build:
+  Build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
 
-    runs-on: ubuntu-latest
+      matrix:
+        os: [ubuntu-20.04, ubuntu-latest, windows-2022, windows-2019]
+        compiler: [llvm-13.0.0, clang++-14, gcc-11, msvc]
+        standard: [14, 17, 20, 23]
+        build_type: [Release, Debug]
+        exclude:
+          # Exclude msvc on non-Windows platforms
+          - os: ubuntu-20.04
+            compiler: msvc
+          - os: ubuntu-latest
+            compiler: msvc
+          # Exclude gcc on Windows platforms
+          - os: windows-2022
+            compiler: gcc-11
+          - os: windows-2019
+            compiler: gcc-11
+          # Exclude llvm on Windows platforms
+          - os: windows-2022
+            compiler: llvm-13.0.0
+          - os: windows-2019
+            compiler: llvm-13.0.0
 
     steps:
     - uses: actions/checkout@v3
-    - name: setup dependencies
+
+    - name: Setup Cpp
+      uses: aminya/setup-cpp@v1
+      with:
+        compiler: ${{ matrix.compiler }}
+        vcvarsall: ${{ contains(matrix.os, 'windows' )}}
+        cmake: true
+        ninja: true
+        vcpkg: false
+        ccache: true
+        clangtidy: true
+        cppcheck: true
+        gcovr: true
+        opencppcoverage: true
+
+    - name: setup dependencies - Unix
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get -y update
         sudo apt-get -y install -y ninja-build libboost-all-dev
+
+    - name: setup dependencies - Windows
+      if: runner.os == 'Windows'
+      run: |
+          choco install ninja
+          choco install boost-msvc-14.1
+  
     - name: make
+      if: runner.os == 'Linux'
       run: |
         cd examples
         make clean
         make
-    - name: cmake
+    
+    - name: configure cmake
       run: |
-        rm -rf build
-        mkdir build && cd build
-        cmake .. -DARICPP_BuildExamples=ON -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wundef -Werror"
-        make
+        cmake -S . -B ./build -G "Ninja Multi-Config" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DCMAKE_CXX_STANDARD=${{matrix.standard}} -DARICPP_BuildExamples=ON -DCMAKE_CXX_FLAGS="-pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=5 -Wundef -Werror"
+
+    - name: Build
+      run: |
+        cmake --build ./build --config ${{matrix.build_type}}
