@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+ - Add ChannelToneDetected eventhandler. PR #72(https://github.com/daniele77/aricpp/pull/72)
+ - Add parameters to the function "continue"
+
 ## Version 1.1.3 - 2023-11-27
 
  - Broke build with new version of boost beast. Fixes [#68](https://github.com/daniele77/aricpp/issues/68)

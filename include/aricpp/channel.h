@@ -115,7 +115,8 @@ public:
         StateChanged(_state);
     }
     
-    Proxy Move(const std::string& app, const std::string& appArgs={}) const {
+    Proxy Move(const std::string& app, const std::string& appArgs={}) const
+    {
         return Proxy::Command(
             Method::post,
             "/ari/channels/"+id+"/move?"
@@ -197,9 +198,16 @@ public:
         return Proxy::Command(Method::delete_, "/ari/channels/"+id, client);
     }
     
-    Proxy Continue() const
+    Proxy Continue(const std::string& context, const std::string& extension, const std::string& priority = {}) const
     {
-        return Proxy::Command(Method::post, "/ari/channels/" + id + "/continue", client);
+        return Proxy::Command(
+            Method::post,
+            "/ari/channels/" + id + "/continue?"
+            "context=" + context +
+            "extension=" + extension +
+            ( priority.empty() ? "" : "&priority=" + priority ),
+            client
+        );
     }
 
 #ifdef ARICPP_DEPRECATED_API
