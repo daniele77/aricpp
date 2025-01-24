@@ -1,4 +1,4 @@
-name: C/C++ CI of aricpp
+name: CI of aricpp
 
 on: [push,pull_request]
 
@@ -8,25 +8,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: setup dependencies new boost
+    - uses: actions/checkout@v3
+    - name: setup dependencies
       run: |
-        sudo rm -rf /usr/lib/libboost_* /usr/lib/cmake/boost_* /usr/lib/libboost_* 
-        sudo apt-get remove 'libboost-.*'
         sudo apt-get -y update
-        rm -rf tmp && mkdir tmp && cd tmp
-        wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz
-        tar xzvf boost_1_76_0.tar.gz
-        cd boost_1_76_0
-        ./bootstrap.sh --prefix=/usr/ --with-libraries=test,thread,system,program_options
-        ./b2
-        sudo ./b2 install
-    - name: make new boost
+        sudo apt-get -y install -y ninja-build libboost-all-dev
+    - name: make
       run: |
         cd examples
         make clean
         make
-    - name: cmake new boost
+    - name: cmake
       run: |
         rm -rf build
         mkdir build && cd build
