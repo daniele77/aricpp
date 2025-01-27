@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 1.2.1 - 2025-01-27
+
+ - Fix some warning
+ - Add C++ version to CmakeLists.txt
+ - AriModel::SendTextMsg -> AriModel::SendTextMessage for uniformity
+
 ## Version 1.2.0 - 2025-01-24
 
  - Add ChannelToneDetected eventhandler. PR #72(https://github.com/daniele77/aricpp/pull/72)
