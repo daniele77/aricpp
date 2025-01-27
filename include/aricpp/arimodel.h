@@ -136,7 +136,7 @@ public:
             });
     }
 
-    Proxy SendTextMsg(const std::string& from, const std::string& to, const std::string& msg)
+    Proxy SendTextMessage(const std::string& from, const std::string& to, const std::string& msg)
     {
         return Proxy::Command(
             Method::put,

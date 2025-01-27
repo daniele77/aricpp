@@ -119,7 +119,7 @@ int main( int argc, char* argv[] )
                 auto sendRequest =
                     [&model,from, to, msg, &tech]()
                     {
-                        model.SendTextMsg(tech + ':' + from, tech + ':' + to, msg)
+                        model.SendTextMessage(tech + ':' + from, tech + ':' + to, msg)
                              .OnError([](Error /*e*/, const string& errMsg){ std::cerr << "Error: " << errMsg << std::endl; });
                     };
 
